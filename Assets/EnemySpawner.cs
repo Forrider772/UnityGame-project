@@ -5,6 +5,7 @@ public class EnemySpawner : MonoBehaviour
 {
     [Header("生成设置")]
     public GameObject enemyPrefab;       // 敌人预制体
+    public Transform moveTarget;        // 敌人移动目标
     public Transform[] spawnPoints;      // 生成点数组（可以多个）
     public float spawnInterval = 2f;    // 生成间隔（秒）
     public int maxEnemyCount = 10;       // 场上最多同时存在的敌人数量
@@ -43,6 +44,9 @@ public class EnemySpawner : MonoBehaviour
         // 实例化敌人
         GameObject newEnemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
 
+        // 设置目标位置
+        newEnemy.GetComponent<Move>().moveTarget = moveTarget;
+        
         // 给敌人加一个死亡回调，数量减1
         Enemy enemy = newEnemy.GetComponent<Enemy>();
         if (enemy != null)

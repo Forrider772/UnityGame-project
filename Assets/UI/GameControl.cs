@@ -1,12 +1,14 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameControl : MonoBehaviour
 {
     public GameObject startUI;
     public GameObject pauseUI;
 
+    public Button startButton;
+    public Button pauseButton;
+    public Button resumeButton;
     // 游戏是否正在运行
     public bool isGameRun = false;
 
@@ -16,6 +18,10 @@ public class GameControl : MonoBehaviour
         // 开局直接暂停
         Time.timeScale = 0;
         isGameRun = false;
+        pauseUI.SetActive(false);
+        startButton.onClick.AddListener(GameStart);
+        pauseButton.onClick.AddListener(GamePause);
+        resumeButton.onClick.AddListener(GameResume);
     }
 
     // ========== 按钮绑定的方法 ==========

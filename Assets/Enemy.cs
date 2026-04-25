@@ -12,12 +12,6 @@ public class Enemy : MonoBehaviour
         Destroy(gameObject);
     }
 
-    // 举个例子：碰到玩家就死亡（你可以改成其他条件）
-    private void OnCollisionEnter2D(Collision2D other)
-    {
-        if (other.gameObject.CompareTag("Player"))
-        {
-            Die();
-        }
-    }
+    //额外死亡条件(可选)
+    
 }
