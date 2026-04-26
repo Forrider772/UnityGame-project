@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -8219615556985329380}
   - component: {fileID: 235750278168158967}
   m_Layer: 10
-  m_Name: Unit
+  m_Name: PlayerUnit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -149,3 +149,5 @@ MonoBehaviour:
   moveSpeed: 2
   atkRange: 1.2
   atkCD: 1
+  hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
+  battleCanvas: {fileID: 0}

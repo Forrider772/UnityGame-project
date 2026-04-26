@@ -4,52 +4,89 @@ public class BattleManager : MonoBehaviour
 {
     public static BattleManager Instance;
 
-    [Header("费用设置")]
-    public int playerCost = 10;
-    public int enemyCost = 10;
+    [Header("双塔引用")]
+    public GameObject playerTower;
+    public GameObject enemyTower;
+
+    // 单独标记双塔是否存活
+    public bool playerTowerAlive = true;
+    public bool enemyTowerAlive = true;
+    [Header("费用")]
+    public int nowCost;
     public int maxCost = 10;
+    public float costAddSpeed = 1f;
 
-    [Header("塔引用")]
-    public TowerBase playerTower;
-    public TowerBase enemyTower;
-
-    public bool battleOver = false;
+    public bool isGameOver = false;
 
     void Awake()
     {
-        Instance = this;
+        if (Instance == null) Instance = this;
     }
 
-    // 玩家扣费用
+    void Update()
+    {
+        // 游戏结束就不再执行任何逻辑
+        if (isGameOver) return;
+
+        // 费用自动增加
+        CostAdd();
+    }
+
+    // 费用增加
+    void CostAdd()
+    {
+        if(nowCost < maxCost)
+        {
+            nowCost += (int)(Time.deltaTime * costAddSpeed);
+        }
+    }
+
+    // 扣费用
     public bool PlayerCostUse(int cost)
     {
-        if (battleOver || playerCost < cost) return false;
-        playerCost -= cost;
-        return true;
+        if (nowCost >= cost)
+        {
+            nowCost -= cost;
+            return true;
+        }
+        return false;
     }
 
-    // 敌方扣费用
-    public bool EnemyCostUse(int cost)
-    {
-        if (battleOver || enemyCost < cost) return false;
-        enemyCost -= cost;
-        return true;
-    }
-
-    // 胜负检测
+    // 胜负判定核心
     public void CheckWin()
     {
-        if (battleOver) return;
+        if (isGameOver) return;
 
-        if(playerTower.hp <= 0)
+        // 敌方塔销毁 = 玩家胜利
+        if (!enemyTowerAlive)
         {
-            battleOver = true;
-            Debug.Log("敌方获胜");
+            GameWin();
         }
-        if(enemyTower.hp <= 0)
+        // 我方塔销毁 = 失败
+        else if (!playerTowerAlive)
         {
-            battleOver = true;
-            Debug.Log("我方获胜");
+            GameLose();
         }
+    }
+
+    // 胜利逻辑
+    void GameWin()
+    {
+        isGameOver = false;
+        Debug.Log("===== 游戏胜利 =====");
+        
+        // 1. 暂停所有游戏逻辑
+        Time.timeScale = 0;
+
+        // 后续你可以加：胜利弹窗、跳转场景
+    }
+
+    // 失败逻辑
+    void GameLose()
+    {
+        isGameOver = true;
+        Debug.Log("===== 游戏失败 =====");
+        
+        Time.timeScale = 0;
     }
 }

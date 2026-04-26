@@ -149,3 +149,5 @@ MonoBehaviour:
   moveSpeed: 2
   atkRange: 1.2
   atkCD: 1
+  hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
+  battleCanvas: {fileID: 0}

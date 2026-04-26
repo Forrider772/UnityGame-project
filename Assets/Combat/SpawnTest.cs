@@ -26,7 +26,7 @@ public class SpawnTest : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.B))
         {
-            if(BattleManager.Instance.EnemyCostUse(1))
+            if(BattleManager.Instance.PlayerCostUse(1))
             {
                 Instantiate(enemyUnitPrefab, enemySpawnPos.position, Quaternion.identity);
             }
