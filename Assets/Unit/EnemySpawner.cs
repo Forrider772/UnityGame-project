@@ -47,19 +47,6 @@ public class EnemySpawner : MonoBehaviour
         // 设置目标位置
         newEnemy.GetComponent<Move>().moveTarget = moveTarget;
         
-        // 给敌人加一个死亡回调，数量减1
-        Enemy enemy = newEnemy.GetComponent<Enemy>();
-        if (enemy != null)
-        {
-            enemy.OnDeath += OnEnemyDeath;
-        }
-
-        currentEnemyCount++;
     }
 
-    // 敌人死亡时调用
-    void OnEnemyDeath()
-    {
-        currentEnemyCount--;
-    }
 }

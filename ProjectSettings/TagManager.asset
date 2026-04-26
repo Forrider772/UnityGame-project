@@ -15,9 +15,9 @@ TagManager:
   - 
   - 
   - 
-  - 
-  - 
-  - 
+  - PlayerUnit
+  - EnemyUnit
+  - Tower
   - 
   - 
   - 

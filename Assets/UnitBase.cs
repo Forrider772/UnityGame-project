@@ -1,85 +1,85 @@
 using UnityEngine;
 
-// 所有单位的父类：战士、射手、法师 都继承这个
 public class UnitBase : MonoBehaviour
 {
-    [Header("基础属性")]
-    public int maxHp = 100;
-    public int attack = 10;
-    public float attackCD = 1f;
-    public float searchRange = 2f;
+    [Header("单位阵营属性")]
+    public Camp camp;
+    public float hp = 120f;
+    public float atk = 8f;
+    public float moveSpeed = 1.8f;
+    public float atkRange = 1.2f;
+    public float atkCD = 1f;
 
-    [Header("阵营")]
-    public bool isEnemy;
+    private Transform curTarget;
+    private float atkTimer;
 
-    protected int currentHp;
-    protected bool isDead;
-    protected GameObject target;
-    protected float attackTimer;
-
-    protected MonoBehaviour moveScript;
-
-    protected virtual void Start()
+    void Update()
     {
-        currentHp = maxHp;
-        moveScript = GetComponent<MonoBehaviour>();
-    }
-
-    protected virtual void Update(){}
-    // 受伤
-    public virtual void TakeDamage(int damage)
-    {
-        if (isDead) return;
-        currentHp -= damage;
-        if (currentHp <= 0) Die();
-    }
-
-    // 死亡
-    protected virtual void Die()
-    {
-        isDead = true;
-        Destroy(gameObject, 0.01f);
-    }
-
-    // 寻找敌人（所有职业共用）
-    protected bool FindEnemy()
-    {
-        target = null;
-        Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, searchRange);
-
-        foreach (var c in cols)
+        if(hp <= 0)
         {
-            UnitBase unit = c.GetComponent<UnitBase>();
-            if (unit == null || unit.isDead) continue;
-            if (unit.isEnemy != isEnemy)
+            Die();
+            return;
+        }
+
+        SearchTarget();
+        MoveAndAttack();
+    }
+
+    // 搜寻目标：敌方单位 > 敌方主塔
+    void SearchTarget()
+    {
+        LayerMask unitMask = camp == Camp.Player 
+            ? LayerMask.GetMask("EnemyUnit") 
+            : LayerMask.GetMask("PlayerUnit");
+
+        Collider2D[] unitCols = Physics2D.OverlapCircleAll(transform.position, 15f, unitMask);
+        
+        if(unitCols.Length > 0)
+        {
+            curTarget = unitCols[0].transform;
+            return;
+        }
+
+        // 无单位就锁定敌方主塔
+        curTarget = camp == Camp.Player 
+            ? BattleManager.Instance.enemyTower.transform 
+            : BattleManager.Instance.playerTower.transform;
+    }
+
+    void MoveAndAttack()
+    {
+        if(curTarget == null) return;
+
+        float dis = Vector2.Distance(transform.position, curTarget.position);
+        if(dis <= atkRange)
+        {
+            // 范围内：攻击
+            atkTimer += Time.deltaTime;
+            if(atkTimer >= atkCD)
             {
-                target = c.gameObject;
-                return true;
+                if(curTarget.TryGetComponent(out UnitBase u))
+                    u.TakeDamage(atk);
+                if(curTarget.TryGetComponent(out TowerBase t))
+                    t.TakeDamage(atk);
+
+                atkTimer = 0;
             }
         }
-        return false;
-    }
-
-    // 移动控制
-    protected void StopMove()
-    {
-        if (moveScript != null)
-            moveScript.enabled = false;
-
-        // 关键：强行停止刚体惯性
-        Rigidbody2D rb = GetComponent<Rigidbody2D>();
-        if(rb != null)
+        else
         {
-            rb.velocity = Vector2.zero;
+            // 范围外：向目标移动
+            transform.position = Vector2.MoveTowards(
+                transform.position, curTarget.position, moveSpeed * Time.deltaTime);
         }
     }
-    protected void ResumeMove() => moveScript.enabled = true;
 
-    // 目标是否有效
-    protected bool TargetValid()
+    public void TakeDamage(float dmg)
     {
-        if (target == null) return false;
-        UnitBase u = target.GetComponent<UnitBase>();
-        return u != null && !u.isDead;
+        hp -= dmg;
+    }
+
+    void Die()
+    {
+        Destroy(gameObject);
     }
 }
