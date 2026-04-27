@@ -52,12 +52,6 @@ public class UnitBase : MonoBehaviour
 
     void SearchTarget()
     {
-        // 游戏结束直接不找目标
-        if (BattleManager.Instance.isGameOver)
-        {
-            curTarget = null;
-            return;
-        }
 
         LayerMask unitMask = camp == Camp.Player
             ? LayerMask.GetMask("EnemyUnit")

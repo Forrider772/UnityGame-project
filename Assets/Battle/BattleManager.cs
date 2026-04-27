@@ -1,8 +1,12 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class BattleManager : MonoBehaviour
 {
     public static BattleManager Instance;
+
+    [Header("绑定的关卡配置数据")]
+    public LevelData levelData;
 
     [Header("双塔引用")]
     public GameObject playerTower;
@@ -12,12 +16,21 @@ public class BattleManager : MonoBehaviour
     public bool playerTowerAlive = true;
     public bool enemyTowerAlive = true;
     [Header("费用")]
-    public int nowCost;
-    public int maxCost = 10;
+    public float nowCost;
+    public float maxCost = 10f;
     public float costAddSpeed = 1f;
 
-    public bool isGameOver = false;
+    [Header("费用UI")]
+    public Text costText;
 
+    private bool isGameOver = false;
+
+    void Start()
+    {
+        // 指定当前关卡
+        MonsterSpawnMgr.Instance.currentLevel = levelData;
+        MonsterSpawnMgr.Instance.StartLevelWave();
+    }
     void Awake()
     {
         if (Instance == null) Instance = this;
@@ -30,6 +43,8 @@ public class BattleManager : MonoBehaviour
 
         // 费用自动增加
         CostAdd();
+
+        costText.text = Mathf.FloorToInt(nowCost) + "/" + maxCost;
     }
 
     // 费用增加
@@ -37,7 +52,7 @@ public class BattleManager : MonoBehaviour
     {
         if(nowCost < maxCost)
         {
-            nowCost += (int)(Time.deltaTime * costAddSpeed);
+            nowCost += (Time.deltaTime * costAddSpeed);
         }
     }
 
