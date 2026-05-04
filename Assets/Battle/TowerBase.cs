@@ -9,7 +9,9 @@ public class TowerBase : MonoBehaviour
     public float atk = 12f;         // 攻击力
     public float atkRange = 3.5f;   // 攻击范围
     public float atkCD = 1.2f;      // 攻击冷却时间
-
+    [Header("塔防御")]
+    public float physicalDefense = 0f;
+    public float magicDefense = 0f;
     [Header("血条")]
     public GameObject hpBarPrefab;  // 血条预制体
     private HPBar hpBar;            // 实例化后的血条组件
@@ -89,19 +91,34 @@ public class TowerBase : MonoBehaviour
         {
             // 对目标单位造成伤害
             if (curTarget.TryGetComponent(out UnitBase unit))
-                unit.TakeDamage(atk);
+    unit.TakeDamage(atk, AttackType.Physical);
 
             // 重置计时器
             atkTimer = 0;
         }
     }
 
-    // 受到伤害：扣血、更新血条
-    public void TakeDamage(float dmg)
+// 受到伤害：区分物理/法术防御
+public void TakeDamage(float dmg, AttackType type)
+{
+    float finalDmg = dmg;
+    if(type == AttackType.Physical)
     {
-        hp -= dmg;
-        hpBar?.UpdateHp(hp);
+        finalDmg = Mathf.Max(1, dmg - physicalDefense);
     }
+    else if(type == AttackType.Magic)
+    {
+        finalDmg = Mathf.Max(1, dmg - magicDefense);
+    }
+    hp -= finalDmg;
+    hpBar?.UpdateHp(hp);
+}
+
+// 兼容旧调用，不报错
+public void TakeDamage(float dmg)
+{
+    TakeDamage(dmg, AttackType.Physical);
+}
 
     // 死亡逻辑：标记胜负状态、销毁血条、销毁自身、触发胜负判定
     void Die()

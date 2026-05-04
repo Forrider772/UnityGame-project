@@ -7,6 +7,13 @@ public enum Camp
     Enemy    // 敌方阵营
 }
 
+// 攻击类型枚举：区分物理/法术攻击
+public enum AttackType
+{
+    Physical,  // 物理攻击（战士/射手）
+    Magic      // 法术攻击（法师）
+}
+
 // 单位基础脚本：控制所有士兵/怪物的移动、攻击、索敌、血量、死亡
 public class UnitBase : MonoBehaviour
 {
@@ -17,6 +24,12 @@ public class UnitBase : MonoBehaviour
     public float moveSpeed = 1.8f;// 移动速度
     public float atkRange = 1.2f; // 攻击范围
     public float atkCD = 1f;      // 攻击冷却时间
+
+    // ========== 攻击类型和双防御属性 ==========
+    [Header("攻击类型与防御")]
+    public AttackType attackType = AttackType.Physical; // 默认物理攻击，法师改成Magic
+    public float physicalDefense = 0f;  // 物理防御（战士/射手用）
+    public float magicDefense = 0f;    // 法术防御（只有法术攻击会触发减伤）
 
     [Header("血条")]
     public GameObject hpBarPrefab;// 血条预制体
@@ -117,12 +130,12 @@ public class UnitBase : MonoBehaviour
             atkTimer += Time.deltaTime;
             if (atkTimer >= atkCD)
             {
-                // 攻击单位
+                // 攻击单位（把攻击类型传进去）
                 if (curTarget.TryGetComponent(out UnitBase u))
-                    u.TakeDamage(atk);
+                    u.TakeDamage(atk, attackType);
                 // 攻击塔
                 if (curTarget.TryGetComponent(out TowerBase t))
-                    t.TakeDamage(atk);
+    t.TakeDamage(atk, attackType);
 
                 atkTimer = 0;
             }
@@ -135,10 +148,25 @@ public class UnitBase : MonoBehaviour
         }
     }
 
-    // 受到伤害：扣血 + 更新血条UI
-    public void TakeDamage(float dmg)
+    // 带攻击类型的受伤害逻辑：区分物理/法术减伤
+    public void TakeDamage(float dmg, AttackType attackerType)
     {
-        hp -= dmg;
+        float finalDamage = dmg;
+
+        if (attackerType == AttackType.Physical)
+        {
+            // 物理攻击 → 用物理防御减伤
+            finalDamage = Mathf.Max(1f, dmg - physicalDefense);
+            Debug.Log($"{gameObject.name} 受到【物理伤害】：原始伤害{dmg} | 物理防御{physicalDefense} | 最终扣血{finalDamage}");
+        }
+        else if (attackerType == AttackType.Magic)
+        {
+            // 法术攻击 → 用法术防御减伤
+            finalDamage = Mathf.Max(1f, dmg - magicDefense);
+            Debug.Log($"{gameObject.name} 受到【法术伤害】：原始伤害{dmg} | 法术防御{magicDefense} | 最终扣血{finalDamage}");
+        }
+
+        hp -= finalDamage;
         hpBar?.UpdateHp(hp);
     }
 

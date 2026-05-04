@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -8219615556985329380}
   - component: {fileID: 235750278168158967}
   m_Layer: 10
-  m_Name: PlayerUnit
+  m_Name: Caster
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -144,10 +144,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   camp: 0
-  hp: 100
-  atk: 8
+  hp: 280
+  atk: 80
   moveSpeed: 2
-  atkRange: 1.2
-  atkCD: 1
+  atkRange: 2.5
+  atkCD: 2
+  attackType: 1
+  physicalDefense: 0
+  magicDefense: 50
   hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
-  battleCanvas: {fileID: 0}
