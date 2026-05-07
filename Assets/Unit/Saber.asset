@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c3b8b2baa9c6c2468316775bd6d2516, type: 3}
   m_Name: Saber
   m_EditorClassIdentifier: 
+  cardID: 1
   cardName: "\u6218\u58EB"
   cost: 1
+  cooldown: 3
   icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   unitPrefab: {fileID: 2674367980097418029, guid: 0ad9cb47d1bf5984c90ffaa9404fccb4, type: 3}

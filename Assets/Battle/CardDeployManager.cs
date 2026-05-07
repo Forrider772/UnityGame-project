@@ -48,6 +48,12 @@ public class CardDeployManager : MonoBehaviour
                 Instantiate(selectedCard.unitPrefab, worldPos, Quaternion.identity);
                 // 部署完成，清空选中卡牌
                 selectedCard = null;
+                // 同时，通知卡牌UI更新冷却状态
+                if(FindObjectOfType<CardManager>().curSelectedCard != null)
+                {
+                    FindObjectOfType<CardManager>().curSelectedCard.StartCardCooldown();
+                    FindObjectOfType<CardManager>().curSelectedCard = null;
+                }
             }
             else
             {

@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c3b8b2baa9c6c2468316775bd6d2516, type: 3}
   m_Name: Shielder
   m_EditorClassIdentifier: 
+  cardID: 2
   cardName: "\u8089\u76FE\u5175"
   cost: 1
+  cooldown: 6
   icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   unitPrefab: {fileID: 2674367980097418029, guid: c6586865acfca6b498819ff985afe1f6, type: 3}
