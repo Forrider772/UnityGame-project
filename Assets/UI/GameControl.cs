@@ -1,36 +1,33 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameControl : MonoBehaviour
 {
-    public GameObject startUI;
+    
     public GameObject pauseUI;
 
-    public Button startButton;
+    public Button reStartButton;
     public Button pauseButton;
     public Button resumeButton;
     // 游戏是否正在运行
-    public bool isGameRun = false;
+    public bool isGameRun = true;
 
 
     void Start()
     {
-        // 开局直接暂停
-        Time.timeScale = 0;
-        isGameRun = false;
+        Time.timeScale = 1;
+        isGameRun = true;
         pauseUI.SetActive(false);
-        startButton.onClick.AddListener(GameStart);
+        reStartButton.onClick.AddListener(GameReStart);
         pauseButton.onClick.AddListener(GamePause);
         resumeButton.onClick.AddListener(GameResume);
     }
 
     // ========== 按钮绑定的方法 ==========
-    public void GameStart()
+    public void GameReStart()
     {
-        Time.timeScale = 1;
-        isGameRun = true;
-
-        startUI.SetActive(false);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void GamePause()
