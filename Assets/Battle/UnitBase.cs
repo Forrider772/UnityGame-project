@@ -1,18 +1,18 @@
 using UnityEngine;
 
 // 阵营枚举：区分玩家单位和敌方单位
-public enum Camp
-{
-    Player,  // 玩家阵营
-    Enemy    // 敌方阵营
-}
+// public enum Camp
+// {
+//     Player,  // 玩家阵营
+//     Enemy    // 敌方阵营
+// }
 
-// 攻击类型枚举：区分物理/法术攻击
-public enum AttackType
-{
-    Physical,  // 物理攻击（战士/射手）
-    Magic      // 法术攻击（法师）
-}
+// // 攻击类型枚举：区分物理/法术攻击
+// public enum AttackType
+// {
+//     Physical,  // 物理攻击（战士/射手）
+//     Magic      // 法术攻击（法师）
+// }
 
 // 单位基础脚本：控制所有士兵/怪物的移动、攻击、索敌、血量、死亡
 public class UnitBase : MonoBehaviour
