@@ -45,7 +45,7 @@ public class EnemySpawnMgr : MonoBehaviour
         // 循环生成本波所有怪物
         for (int i = 0; i < wave.spawnCount; i++)
         {
-            SpawnMonster(wave.monsterPrefab);
+            SpawnMonster(wave.enemyPrefab);
             // 等待波次配置的间隔时间，再刷下一只
             yield return new WaitForSeconds(wave.spawnInterval);
         }

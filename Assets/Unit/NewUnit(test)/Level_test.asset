@@ -14,12 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelName: 1
   waves:
-  - monsterPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
+  - enemyPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
     spawnCount: 2
     spawnInterval: 2
-  - monsterPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
+    pathID: 0
+  - enemyPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
     spawnCount: 2
     spawnInterval: 2
-  - monsterPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
+    pathID: 1
+  - enemyPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
     spawnCount: 2
     spawnInterval: 2
+    pathID: 0

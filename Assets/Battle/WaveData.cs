@@ -3,8 +3,15 @@ using UnityEngine;
 [System.Serializable]
 public class WaveData
 {
-    [Header("本波怪物")]
-    public GameObject monsterPrefab;
-    public int spawnCount;      // 本波数量
-    public float spawnInterval; // 单个怪物间隔
+    [Header("生成的敌人")]
+    public GameObject enemyPrefab;
+
+    [Header("生成数量")]
+    public int spawnCount;
+
+    [Header("生成间隔（秒）")]
+    public float spawnInterval;
+
+    [Header("行走路径ID")]
+    public PathID pathID;
 }

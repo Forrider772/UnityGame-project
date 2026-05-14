@@ -31,10 +31,10 @@ public class BattleManager : MonoBehaviour
     // 游戏启动时执行：初始化关卡与出怪系统
     void Start()
     {
+        // 指定生成点
         // 指定当前使用的关卡数据
-        EnemySpawnMgr.Instance.currentLevel = levelData;
         // 启动关卡波次出怪逻辑
-        EnemySpawnMgr.Instance.StartLevelWave();
+        WaveGenerator.Instance.StartWave(enemyTower.transform, levelData);  
     }
 
     // 脚本实例化时执行：初始化单例
@@ -70,7 +70,7 @@ public class BattleManager : MonoBehaviour
     // 玩家使用费用（扣费用）
     // 参数：需要消耗的费用
     // 返回值：费用足够返回true，不足返回false
-    public bool PlayerCostUse(int cost)
+    public bool UseCost(int cost)
     {
         if (nowCost >= cost)
         {

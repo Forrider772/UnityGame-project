@@ -1,73 +1,91 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 卡牌管理器（单例）
+/// 功能：
+/// 1. 根据玩家卡组生成所有卡牌UI
+/// 2. 管理卡牌选中、取消选中
+/// 3. 与CardDeploy交互，传递选中卡牌
+/// </summary>
 public class CardManager : MonoBehaviour
 {
-    [Header("配置")]
-    public Transform cardParent;       // 水平布局父物体
-    public GameObject cardPrefab;      // 卡牌预制体
-    public PlayerDeck playerDeck;      // 玩家携带的卡组
+    public static CardManager Instance;
 
-    private List<CardItemUI> spawnedCards = new List<CardItemUI>();
+    [Header("卡牌UI设置")]
+    [Tooltip("卡牌父物体（布局容器）")]
+    public Transform cardParent;
 
-    // 记录当前选中的一张卡牌UI
-    public CardItemUI curSelectedCard;
-    void Start()
+    [Tooltip("卡牌预制体（挂CardInteraction）")]
+    public GameObject cardPrefab;
+
+    [Tooltip("玩家卡组数据")]
+    public PlayerDeck playerDeck;
+
+    // 所有已生成的卡牌UI
+    private List<CardInteraction> cardList = new List<CardInteraction>();
+
+    /// <summary>
+    /// 当前选中的卡牌
+    /// </summary>
+    public CardInteraction CurrentSelected { get; private set; }
+
+    /// <summary>
+    /// 初始化单例
+    /// </summary>
+    void Awake() => Instance = this;
+
+    /// <summary>
+    /// 开局生成卡牌UI
+    /// </summary>
+    void Start() => RefreshAllCards();
+
+    /// <summary>
+    /// 刷新所有卡牌UI
+    /// </summary>
+    public void RefreshAllCards()
     {
-        // 游戏启动 → 根据携带卡组动态生成卡牌
-        GenerateCardsFromDeck();
+        ClearAll();
+        foreach (var data in playerDeck.carryCards)
+            SpawnCard(data);
     }
 
-    #region 核心：动态生成卡牌UI
-    public void GenerateCardsFromDeck()
+    /// <summary>
+    /// 生成单张卡牌UI
+    /// </summary>
+    private void SpawnCard(CardData data)
     {
-        ClearAllCards(); // 先清空
-
-        foreach (var card in playerDeck.carryCards)
-        {
-            SpawnCard(card);
-        }
+        var go = Instantiate(cardPrefab, cardParent);
+        var card = go.GetComponent<CardInteraction>();
+        card.Init(data);
+        cardList.Add(card);
     }
 
-    void SpawnCard(CardData data)
+    /// <summary>
+    /// 清空所有卡牌UI
+    /// </summary>
+    private void ClearAll()
     {
-        var obj = Instantiate(cardPrefab, cardParent);
-        var cardUI = obj.GetComponent<CardItemUI>();
-        cardUI.Init(data);
-        spawnedCards.Add(cardUI);
+        foreach (var card in cardList) Destroy(card.gameObject);
+        cardList.Clear();
+        CurrentSelected = null;
     }
 
-    void ClearAllCards()
+    /// <summary>
+    /// 卡牌点击回调
+    /// </summary>
+    /// <param name="clickedCard">被点击的卡牌</param>
+    public void OnCardClicked(CardInteraction clickedCard)
     {
-        foreach (var card in spawnedCards)
-            Destroy(card.gameObject);
+        // 取消旧选中
+        if (CurrentSelected != null && CurrentSelected != clickedCard)
+            CurrentSelected.Deselect();
 
-        spawnedCards.Clear();
-    }
-    #endregion
+        // 设置新选中
+        CurrentSelected = clickedCard;
+        CurrentSelected.Select();
 
-    #region 【预留】编辑携带卡组功能（未来直接用）
-    public void AddCardToDeck(CardData newCard)
-    {
-        if (!playerDeck.carryCards.Contains(newCard))
-        {
-            playerDeck.carryCards.Add(newCard);
-            RefreshUI();
-        }
+        // 通知部署系统选中卡牌
+        CardDeploy.Instance.SelectCard(clickedCard.GetCardData());
     }
-
-    public void RemoveCardFromDeck(CardData card)
-    {
-        if (playerDeck.carryCards.Contains(card))
-        {
-            playerDeck.carryCards.Remove(card);
-            RefreshUI();
-        }
-    }
-
-    public void RefreshUI()
-    {
-        GenerateCardsFromDeck();
-    }
-    #endregion
 }

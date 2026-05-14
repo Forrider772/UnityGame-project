@@ -25,6 +25,16 @@ public class UnitMovement : MonoBehaviour
     }
 
     /// <summary>
+    /// 外部生成器调用：给单位设置行走路径
+    /// </summary>
+    public void SetPath(PathManager path)
+    {
+        pathManager = path;
+        // 重置路径点索引，防止复用残留
+        currentPathIndex = 0;
+    }
+    
+    /// <summary>
     /// 沿预设平滑路径匀速前进
     /// </summary>
     public void MoveAlongPath()

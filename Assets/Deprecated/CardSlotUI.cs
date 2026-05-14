@@ -43,6 +43,6 @@ public class CardSlotUI : MonoBehaviour
     void OnClickCard()
     {
         // 选中当前卡牌，进入地面部署状态
-         CardDeployManager.Instance.SelectCard(cardData);
+         CardDeploy.Instance.SelectCard(cardData);
     }
 }
