@@ -655,6 +655,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df969206d4a7be54e9ca20785f3d8817, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  camp: 1
+  pathId: 0
   pathPoints:
   - {fileID: 1945352397}
   - {fileID: 171870599}
@@ -902,8 +904,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 521113935}
-  - component: {fileID: 521113934}
   - component: {fileID: 521113936}
+  - component: {fileID: 521113937}
   m_Layer: 0
   m_Name: CardDeployManager
   m_TagString: Untagged
@@ -911,19 +913,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &521113934
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 521113933}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cb24eb0b370171a4fa10c7c236dc82f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  deployArea: {fileID: 268792967}
 --- !u!4 &521113935
 Transform:
   m_ObjectHideFlags: 0
@@ -953,13 +942,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cardParent: {fileID: 248349067}
-  cardPrefab: {fileID: 8637823183569774257, guid: 69f353999c632b54f9c7b23728aaa4e1, type: 3}
+  cardPrefab: {fileID: 3327544750186590502, guid: af4c7fe53dfa99548826d09246d97176, type: 3}
   playerDeck:
     carryCards:
-    - {fileID: 11400000, guid: 9ec1cf3984d8f834f8a979254ffadfea, type: 2}
-    - {fileID: 11400000, guid: baa7e6a6e251dd848b3ca3d40bdd8155, type: 2}
     - {fileID: 11400000, guid: b65ee3fe7725c5244a3d0e77c47cdec9, type: 2}
-  curSelectedCard: {fileID: 0}
+--- !u!114 &521113937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 521113933}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b06097a98ea8bd43afe1df090d135a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  routes: []
+  selectRange: 15
 --- !u!1 &538220888
 GameObject:
   m_ObjectHideFlags: 0
@@ -1450,8 +1450,8 @@ GameObject:
   m_Component:
   - component: {fileID: 765256308}
   - component: {fileID: 765256307}
-  - component: {fileID: 765256309}
   - component: {fileID: 765256310}
+  - component: {fileID: 765256311}
   m_Layer: 0
   m_Name: BattleManager
   m_TagString: Untagged
@@ -1471,7 +1471,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f764fab78376004b96dc0e366664c39, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelData: {fileID: 11400000, guid: a94f804c070544a4a820d1c305d6119b, type: 2}
+  waveList: {fileID: 11400000, guid: a94f804c070544a4a820d1c305d6119b, type: 2}
   playerTower: {fileID: 557493288}
   enemyTower: {fileID: 517911809}
   playerTowerAlive: 1
@@ -1495,23 +1495,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 551924294}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &765256309
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 765256305}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 748c1aa18667dc743901abd790da4ba5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pathBindList:
-  - pathID: 0
-    pathMgr: {fileID: 320316391}
-  - pathID: 1
-    pathMgr: {fileID: 2068864155}
 --- !u!114 &765256310
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1522,6 +1505,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 75e0ad88cb33590418ea511fa05d3390, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &765256311
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 765256305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 748c1aa18667dc743901abd790da4ba5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &849030308
@@ -3787,6 +3782,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df969206d4a7be54e9ca20785f3d8817, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  camp: 1
+  pathId: 1
   pathPoints:
   - {fileID: 181471252}
   - {fileID: 1349195804}
