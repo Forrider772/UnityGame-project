@@ -16,13 +16,12 @@ public class WaveGenerator : MonoBehaviour
     [Header("引用")]
     private Transform spawnPoint;  // 生成点
     private WaveList waveList;   // 波次列表配置容器
-    private LevelPathManager levelPathManager;   // 本关路径管理器
+    
 
     // 脚本初始化时设置单例
     void Awake()
     {
         Instance = this;
-        levelPathManager = GetComponent<LevelPathManager>();
     }
 
     /// <summary>
@@ -56,7 +55,7 @@ public class WaveGenerator : MonoBehaviour
     IEnumerator SpawnOneWave(WaveData wave)
     {
         // 1. 根据波次配置的路径ID，从路径管理器拿到真实路径对象
-        PathManager targetPath = levelPathManager.GetPath(wave.camp, wave.pathID);
+        PathManager targetPath = LevelPathManager.Instance.GetPath(wave.camp, wave.pathID);
         if (targetPath == null) yield break;  // 路径找不到，直接终止本波
 
         // 2. 循环生成当前波次指定数量的单位

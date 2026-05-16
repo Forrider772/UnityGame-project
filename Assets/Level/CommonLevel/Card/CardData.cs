@@ -3,6 +3,9 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Card", menuName = "Battle/Card Data")]
 public class CardData : ScriptableObject
 {
+    [Header("部署配置")]
+    public CampType camp;       // 卡牌所属阵营
+
     [Header("卡牌信息")]
     public string cardID;        // 卡牌唯一ID
     public string cardName;       // 卡牌名字

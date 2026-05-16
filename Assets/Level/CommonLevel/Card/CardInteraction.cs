@@ -36,7 +36,7 @@ public class CardInteraction : MonoBehaviour
     /// <summary>
     /// 是否处于选中状态
     /// </summary>
-    public bool IsSelected { get; private set; }
+    public bool IsSelected;
 
     /// <summary>
     /// 初始化卡牌数据和UI

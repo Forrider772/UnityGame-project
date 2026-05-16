@@ -6,7 +6,6 @@ using UnityEngine;
 /// 功能：
 /// 1. 根据玩家卡组生成所有卡牌UI
 /// 2. 管理卡牌选中、取消选中
-/// 3. 与CardDeploy交互，传递选中卡牌
 /// </summary>
 public class CardManager : MonoBehaviour
 {
@@ -16,7 +15,7 @@ public class CardManager : MonoBehaviour
     [Tooltip("卡牌父物体（布局容器）")]
     public Transform cardParent;
 
-    [Tooltip("卡牌预制体（挂CardInteraction）")]
+    [Tooltip("卡牌预制体")]
     public GameObject cardPrefab;
 
     [Tooltip("玩家卡组数据")]
@@ -28,7 +27,7 @@ public class CardManager : MonoBehaviour
     /// <summary>
     /// 当前选中的卡牌
     /// </summary>
-    public CardInteraction CurrentSelected { get; private set; }
+    public CardInteraction CurrentSelected;
 
     /// <summary>
     /// 初始化单例
@@ -84,8 +83,17 @@ public class CardManager : MonoBehaviour
         // 设置新选中
         CurrentSelected = clickedCard;
         CurrentSelected.Select();
-
-        // 通知部署系统选中卡牌
-        CardDeploy.Instance.SelectCard(clickedCard.GetCardData());
+    }
+    
+    /// <summary>
+    /// 取消选中当前卡牌
+    /// </summary>
+    public void DeselectCurrentCard()
+    {
+        if (CurrentSelected != null)
+        {
+            CurrentSelected.Deselect();
+            CurrentSelected = null;
+        }
     }
 }

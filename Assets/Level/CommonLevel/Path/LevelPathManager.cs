@@ -8,6 +8,8 @@ using UnityEngine;
 /// </summary>
 public class LevelPathManager : MonoBehaviour
 {
+    //全局单例
+    public static LevelPathManager Instance;
     /// <summary>
     /// 路径核心存储结构
     /// 第一层：阵营类型 -> 该阵营所有路线
@@ -16,10 +18,12 @@ public class LevelPathManager : MonoBehaviour
     private Dictionary<CampType, Dictionary<PathID, PathManager>> campPathDict = new();
 
     /// <summary>
+    /// 初始化时调用，设置全局单例
     /// 场景加载时自动收集所有路径
     /// </summary>
     private void Awake()
     {
+        Instance = this;
         CollectAllPathsInScene();
     }
 
