@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 1120568360470067073}
   - component: {fileID: -7181395724997178257}
   m_Layer: 10
-  m_Name: Player 1
+  m_Name: soldier
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -148,14 +148,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   camp: 0
-  maxHp: 120
+  maxHp: 300
   atk: 50
-  moveSpeed: 1.8
-  atkRange: 1.2
+  moveSpeed: 1.5
+  atkRange: 1
   atkCD: 1
-  detectRange: 3
+  detectRange: 2
   attackType: 0
-  physicalDefense: 0
+  physicalDefense: 10
   magicDefense: 0
   hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
   currentHp: 0

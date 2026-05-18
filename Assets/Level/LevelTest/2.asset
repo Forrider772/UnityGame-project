@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1c3b8b2baa9c6c2468316775bd6d2516, type: 3}
-  m_Name: 1
+  m_Name: 2
   m_EditorClassIdentifier: 
   camp: 0
-  cardID: 1
-  cardName: 1
-  cost: 5
+  cardID: 2
+  cardName: 2
+  cost: 8
   cooldown: 2
   icon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
-  unitPrefab: {fileID: 6656251850606900385, guid: 36a17f1bcca42014cbd1fb0dca20d1fd, type: 3}
+  unitPrefab: {fileID: 6656251850606900385, guid: 7d60d6ee712e20841b304ab7ed2f96d6, type: 3}
