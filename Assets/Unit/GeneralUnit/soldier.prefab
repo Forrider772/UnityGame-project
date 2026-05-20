@@ -148,14 +148,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   camp: 0
-  maxHp: 300
-  atk: 50
+  maxHp: 200
+  atk: 60
   moveSpeed: 1.5
   atkRange: 1
-  atkCD: 1
-  detectRange: 2
+  atkCD: 1.2
+  detectRange: 1
   attackType: 0
-  physicalDefense: 10
+  physicalDefense: 5
   magicDefense: 0
   hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
   currentHp: 0

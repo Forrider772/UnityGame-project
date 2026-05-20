@@ -152,8 +152,8 @@ MonoBehaviour:
   atk: 60
   moveSpeed: 1.5
   atkRange: 1
-  atkCD: 1
-  detectRange: 2
+  atkCD: 1.2
+  detectRange: 1
   attackType: 0
   physicalDefense: 10
   magicDefense: 0
