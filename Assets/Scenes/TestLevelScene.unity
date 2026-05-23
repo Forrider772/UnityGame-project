@@ -1256,6 +1256,7 @@ MonoBehaviour:
   playerDeck:
     carryCards:
     - {fileID: 11400000, guid: b65ee3fe7725c5244a3d0e77c47cdec9, type: 2}
+    - {fileID: 11400000, guid: ec502278ac8015241a752df726417e3d, type: 2}
     - {fileID: 11400000, guid: b65ee3fe7725c5244a3d0e77c47cdec9, type: 2}
   CurrentSelected: {fileID: 0}
 --- !u!114 &521113937

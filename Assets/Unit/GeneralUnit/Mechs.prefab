@@ -15,9 +15,9 @@ GameObject:
   - component: {fileID: 1553698053914367690}
   - component: {fileID: 330323810415328444}
   - component: {fileID: 1120568360470067073}
-  - component: {fileID: 3381490034102016274}
-  m_Layer: 11
-  m_Name: Enemy 2
+  - component: {fileID: -7181395724997178257}
+  m_Layer: 10
+  m_Name: Mechs
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -80,7 +80,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 0.5764706, b: 0.17149875, a: 1}
+  m_Color: {r: 0.8443396, g: 0.7915443, b: 0.087620154, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -147,15 +147,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6aed04392a6cb36489992d08404655ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  camp: 1
-  maxHp: 200
+  camp: 0
+  maxHp: 350
   atk: 60
-  moveSpeed: 1.5
+  moveSpeed: 1
   atkRange: 1
-  atkCD: 1.2
+  atkCD: 1.4
   detectRange: 1
   attackType: 0
-  physicalDefense: 10
+  physicalDefense: 30
   magicDefense: 0
   hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
   currentHp: 0
@@ -183,7 +183,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1f58364e1c594e4e870641df31b12f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pathManager: {fileID: 0}
+  pathManager: {fileID: 8315374237784775408, guid: c8f5f06783d87cd45aa1dbb0f7c4a302, type: 3}
 --- !u!114 &1120568360470067073
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -196,7 +196,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26d8a02bc9b95bf4590ead200f9f7ecb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &3381490034102016274
+--- !u!114 &-7181395724997178257
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
