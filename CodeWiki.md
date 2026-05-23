@@ -1,0 +1,715 @@
+# 卡牌塔防游戏 - Code Wiki
+
+## 1. 项目概述
+
+这是一个基于Unity 2D开发的卡牌塔防策略游戏。游戏核心玩法结合了卡牌召唤、单位沿路径移动、以及双塔攻防机制。
+
+**主要特性：**
+- 卡牌系统：支持卡牌选择、部署、冷却机制
+- 路径系统：多阵营路径管理与可视化
+- 波次系统：配置化敌人生成与路径分配
+- 战斗系统：单位属性、攻防机制、胜负判定
+- 存档系统：多栏位 JSON 存档，关卡进度持久化
+- 菜单系统：新游戏/继续/加载/设置完整流程
+- 对话系统：剧情对话展示
+
+---
+
+## 2. 项目结构
+
+```
+Assets/
+├── ArtResources/              # 美术资源
+│   ├── Fonts/                # 字体文件
+│   └── Deprecated/           # 弃用脚本
+├── Dialogue/                 # 对话模块
+│   ├── DialogueAsset.cs      # 对话数据资产
+│   ├── DialogueManager.cs    # 对话管理器
+│   ├── DialogueStarter.cs    # 对话触发
+│   └── NPCInteract.cs        # NPC交互
+├── Level/                    # 关卡核心模块
+│   └── CommonLevel/
+│       ├── Battle/           # 战斗系统
+│       │   ├── BattleManager.cs
+│       │   └── TowerBase.cs
+│       ├── Camp/             # 阵营定义
+│       │   └── CampType.cs
+│       ├── Card/             # 卡牌系统
+│       │   ├── CardData.cs
+│       │   ├── CardDeploy.cs
+│       │   ├── CardInteraction.cs
+│       │   ├── CardManager.cs
+│       │   └── PlayerDeck.cs
+│       ├── Helper/           # 工具类
+│       │   └── Math2DHelper.cs
+│       ├── Path/             # 路径系统
+│       │   ├── LevelPathManager.cs
+│       │   ├── PathID.cs
+│       │   ├── PathManager.cs
+│       │   └── PathVisualManager.cs
+│       ├── UI/               # 战斗UI
+│       │   ├── GamePauseManager.cs
+│       │   ├── GameSettingsManager.cs
+│       │   └── HPBar.cs
+│       └── Wave/             # 波次系统
+│           ├── WaveData.cs
+│           ├── WaveGenerator.cs
+│           └── WaveList.cs
+├── Menu/                     # 主菜单模块
+│   ├── MenuManager.cs        # 菜单核心逻辑
+│   ├── MenuSettingsManager.cs # 菜单设置管理
+│   └── SaveSlotPanel.cs      # 存档栏位选择面板
+├── Save/                     # 存档模块
+│   ├── GameSaveData.cs       # 存档数据结构
+│   └── SaveManager.cs        # 存档管理器（静态类）
+├── Scenes/                   # 场景
+│   ├── MenuScene.unity       # 主菜单场景
+│   ├── Level_1.unity         # 关卡1场景
+│   ├── TestLevelScene.unity  # 测试关卡场景
+│   └── GameStart/
+│       └── UiStart.cs
+├── TextMesh Pro/             # TextMeshPro插件
+└── Unit/                     # 单位系统
+    └── GenericScript/
+        ├── UnitAI.cs
+        ├── UnitAttr.cs
+        ├── UnitCombat.cs
+        ├── UnitMovement.cs
+        └── UnitUI.cs
+```
+
+---
+
+## 3. 核心架构
+
+### 3.1 全局单例模式
+
+项目使用全局单例模式管理核心系统：
+
+| 单例类 | 职责 | 所在文件 |
+|--------|------|----------|
+| [BattleManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/Battle/BattleManager.cs) | 战斗核心管理、费用控制、胜负判定 | Battle/BattleManager.cs |
+| [CardManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardManager.cs) | 卡牌UI生成、选中管理 | Card/CardManager.cs |
+| [LevelPathManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/LevelPathManager.cs) | 场景路径收集与查询 | Path/LevelPathManager.cs |
+| [WaveGenerator](file:///d:/project/My%20project/Assets/Level/CommonLevel/Wave/WaveGenerator.cs) | 波次生成与单位生成 | Wave/WaveGenerator.cs |
+
+### 3.2 静态管理器
+
+| 静态类 | 职责 | 所在文件 |
+|--------|------|----------|
+| [SaveManager](file:///d:/project/My%20project/Assets/Save/SaveManager.cs) | 存档文件读写、多栏位管理 | Save/SaveManager.cs |
+
+### 3.3 系统依赖关系图
+
+```
+BattleManager (核心控制)
+    ├── WaveGenerator (敌人生成)
+    │   └── LevelPathManager (路径查询)
+    │       └── PathManager (单条路径)
+    ├── CardManager (卡牌管理)
+    │   └── CardDeploy (卡牌部署)
+    │       └── LevelPathManager
+    ├── TowerBase (双塔攻防)
+    └── SaveManager (胜利时自动存档)
+
+MenuManager (菜单控制)
+    ├── SaveSlotPanel (栏位选择UI)
+    │   └── SaveManager (存档读写)
+    ├── MenuSettingsManager (设置面板)
+    └── GameSettingsManager (关卡内设置)
+
+单位系统:
+    UnitAttr (属性)
+    ├── UnitMovement (移动)
+    ├── UnitCombat (战斗)
+    └── UnitAI (AI决策)
+```
+
+---
+
+## 4. 核心模块详解
+
+### 4.1 战斗系统 (Battle)
+
+#### 4.1.1 BattleManager
+
+**职责：**
+- 管理关卡流程与游戏状态
+- 控制费用自动增长与使用
+- 双塔存活状态管理
+- 胜负判定与游戏结束面板
+- 胜利时自动存档并推进关卡
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `UseCost(int cost)` | 消耗费用，返回是否成功 |
+| `CheckWin()` | 胜负判定，由塔死亡时触发 |
+| `GameWin()` | 暂停时间 → MarkLevelCompleted 存档 → 显示胜利面板 |
+| `GameLose()` | 暂停时间 → 显示失败面板 |
+| `OnWinNextLevel()` | 胜利面板 — 加载下一关 |
+| `OnWinMainMenu()` | 胜利面板 — 返回主菜单 |
+| `OnLoseRetry()` | 失败面板 — 重新加载当前关卡 |
+| `OnLoseMainMenu()` | 失败面板 — 返回主菜单 |
+
+**关键字段：**
+
+```csharp
+public float nowCost;              // 当前费用
+public float maxCost = 10f;        // 费用上限
+public float costAddSpeed = 1f;    // 费用增长速度
+public bool playerTowerAlive;      // 玩家塔存活状态
+public bool enemyTowerAlive;       // 敌方塔存活状态
+// 胜利/失败面板
+public GameObject winPanel / losePanel;
+```
+
+#### 4.1.2 TowerBase
+
+**职责：**
+- 防御塔血量、攻击、索敌
+- 受到伤害与死亡处理
+- 触发胜负判定
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `TakeDamage(float dmg, AttackType type)` | 承受伤害，区分物理/法术防御 |
+| `FindEnemy()` | 搜索范围内最近敌人 |
+| `AttackLogic()` | 攻击冷却与伤害结算 |
+| `Die()` | 死亡逻辑，标记胜负 |
+
+---
+
+### 4.2 卡牌系统 (Card)
+
+#### 4.2.1 CardData
+
+**职责：** 卡牌数据配置容器（ScriptableObject）
+
+**字段说明：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `camp` | CampType | 卡牌所属阵营 |
+| `cardID` | string | 卡牌唯一ID |
+| `cardName` | string | 卡牌名称 |
+| `cost` | int | 消耗费用 |
+| `cooldown` | float | 冷却时间 |
+| `icon` | Sprite | 卡牌图标 |
+| `unitPrefab` | GameObject | 召唤的单位预制体 |
+
+#### 4.2.2 CardManager
+
+**职责：**
+- 生成卡牌UI
+- 管理卡牌选中状态
+- 卡牌列表维护
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `RefreshAllCards()` | 刷新所有卡牌UI |
+| `OnCardClicked(CardInteraction)` | 处理卡牌点击 |
+| `DeselectCurrentCard()` | 取消选中卡牌 |
+
+#### 4.2.3 CardInteraction
+
+**职责：**
+- 卡牌UI显示与交互
+- 冷却计时与视觉反馈
+- 选中/取消选中状态管理
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `Init(CardData data)` | 初始化卡牌数据 |
+| `Select()` / `Deselect()` | 设置选中/取消选中 |
+| `StartCooldown()` | 开始冷却计时 |
+
+#### 4.2.4 CardDeploy
+
+**职责：**
+- 卡牌部署流程控制
+- 路线显示与高亮
+- 单位生成与路径分配
+
+**部署流程：**
+1. 玩家选中卡牌 → 进入部署模式，显示同阵营路线
+2. 鼠标悬停路线 → 路线高亮
+3. 左键点击 → 在路线起点生成单位，扣费，触发冷却
+4. 右键点击 → 退出部署模式
+
+---
+
+### 4.3 路径系统 (Path)
+
+#### 4.3.1 PathManager
+
+**职责：**
+- 单条路径数据管理
+- 路径可视化控制
+- 提供路径点查询接口
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `SetVisible(bool visible)` | 设置路线是否可见 |
+| `SetHighlight(bool highlight)` | 设置路线高亮状态 |
+| `GetStartPoint()` | 获取路线起点坐标 |
+| `GetWaypoints2D()` | 获取所有路径点 |
+
+#### 4.3.2 LevelPathManager
+
+**职责：**
+- 场景内所有路径收集
+- 按阵营+路线ID查询路径
+
+**核心数据结构：**
+
+```csharp
+Dictionary<CampType, Dictionary<PathID, PathManager>> campPathDict
+// 第一层：阵营 → 该阵营所有路线
+// 第二层：路线ID → 具体路径对象
+```
+
+**查询接口：**
+
+| 方法 | 功能 |
+|------|------|
+| `GetPath(CampType camp, PathID pathId)` | 获取指定路径 |
+| `GetAllPathsByCamp(CampType camp)` | 获取阵营所有路径 |
+
+---
+
+### 4.4 波次系统 (Wave)
+
+#### 4.4.1 WaveGenerator
+
+**职责：**
+- 按配置生成波次
+- 分配单位路径
+- 控制生成间隔
+
+**生成流程：**
+1. 读取波次列表配置
+2. 按阵营和路径ID获取真实路径
+3. 生成单位并设置路径
+4. 波次间固定间隔2秒
+
+#### 4.4.2 WaveData
+
+**配置字段：**
+
+| 字段 | 说明 |
+|------|------|
+| `camp` | 单位所属阵营 |
+| `pathID` | 行走路径ID |
+| `unitPrefab` | 单位预制体 |
+| `spawnCount` | 生成数量 |
+| `spawnInterval` | 生成间隔 |
+
+---
+
+### 4.5 单位系统 (Unit)
+
+#### 4.5.1 UnitAttr
+
+**职责：** 纯数据存储容器，不处理逻辑
+
+**核心属性：**
+
+```csharp
+public CampType camp;                // 所属阵营
+public float maxHp = 120f;          // 最大生命
+public float atk = 8f;              // 攻击力
+public float moveSpeed = 1.8f;      // 移动速度
+public float atkRange = 1.2f;       // 攻击范围
+public float atkCD = 1f;            // 攻击冷却
+public float detectRange = 3f;      // 索敌范围
+public AttackType attackType;       // 攻击类型
+public float physicalDefense;       // 物理防御
+public float magicDefense;          // 法术防御
+```
+
+#### 4.5.2 UnitMovement
+
+**职责：**
+- 沿路径自动行走
+- 向目标点追击
+- 判断路径是否完成
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `SetPath(PathManager path)` | 设置行走路径 |
+| `MoveAlongPath()` | 沿预设路径前进 |
+| `MoveToTarget(Vector2 targetPos)` | 向目标点追击 |
+| `IsPathCompleted()` | 判断路径是否走完 |
+
+---
+
+### 4.6 存档系统 (Save)
+
+#### 4.6.1 SaveManager
+
+**职责：**
+- 静态存档管理器，全局访问
+- 支持 3 个存档栏位（0~2），JSON 格式持久化
+- 文件路径：`Application.persistentDataPath/gamesave_{slotIndex}.json`
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `HasSave(int slotIndex)` | 检查指定栏位是否有存档 |
+| `LoadSave(int slotIndex)` | 读取指定栏位存档，失败返回 null |
+| `SaveGame(GameSaveData, int)` | 保存存档到指定栏位，自动记录时间 |
+| `DeleteSave(int slotIndex)` | 删除指定栏位存档 |
+| `CreateNewGame()` | 创建全新存档数据（所有关卡未完成，当前=第一关） |
+| `MarkLevelCompleted(string, int)` | 标记关卡完成，自动推进到下一关 |
+| `HasAnySave()` | 检查是否存在任何存档 |
+| `GetLatestSaveSlot()` | 获取最新存档栏位索引，无存档返回 -1 |
+
+**关键字段：**
+
+```csharp
+public const int SlotCount = 3;            // 存档栏位数
+public static int CurrentSlotIndex;        // 当前游玩的栏位（MenuManager 设置）
+```
+
+#### 4.6.2 GameSaveData
+
+**数据结构：**
+
+```csharp
+[System.Serializable]
+public class GameSaveData
+{
+    public int saveVersion = 1;            // 存档版本号
+    public int slotIndex;                  // 所属栏位
+    public string saveTime;                // 存档时间
+    public int currentLevelIndex;          // 当前关卡索引
+    public string currentLevelScene;       // 当前关卡场景名
+    public List<LevelRecord> levelRecords; // 关卡完成记录列表
+}
+
+[System.Serializable]
+public class LevelRecord
+{
+    public string levelScene;              // 关卡场景名
+    public bool isCompleted;               // 是否已完成
+}
+```
+
+---
+
+### 4.7 菜单系统 (Menu)
+
+#### 4.7.1 MenuManager
+
+**职责：**
+- 主菜单核心逻辑
+- 新游戏/继续游戏/加载存档/退出游戏
+- 委托 SaveSlotPanel 处理栏位选择 UI
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `OnNewGameClicked()` | 打开栏位面板（NewGame 模式） |
+| `OnContinueClicked()` | 自动加载最新存档进入游戏 |
+| `OnLoadClicked()` | 打开栏位面板（Load 模式） |
+| `OnSlotConfirmed(int)` | 栏位确认回调，开始新游戏或加载存档 |
+
+**数据流：**
+```
+新游戏: 选择栏位 → 删旧档 → CreateNewGame → SaveGame → LoadScene("Level_1")
+继续游戏: GetLatestSaveSlot → LoadSave → LoadScene(save.currentLevelScene)
+加载存档: 选择栏位 → LoadSave → LoadScene
+```
+
+#### 4.7.2 SaveSlotPanel
+
+**职责：**
+- 独立的存档栏位选择 UI 组件
+- 支持 NewGame（选空栏位/覆盖已有）和 Load（选已有存档）两种模式
+- 从按钮子节点自动获取 Text 显示存档信息
+- 内置覆盖确认弹窗
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `Show(Mode)` | 显示面板并刷新栏位信息 |
+| `Hide()` | 隐藏面板及子面板 |
+| `OnSlotConfirmed(int)` | 事件，用户确认选择后触发 |
+| `OnCancelled` | 事件，用户取消时触发 |
+
+#### 4.7.3 MenuSettingsManager
+
+**职责：**
+- 菜单场景设置面板管理
+- 音量/全屏调整，PlayerPrefs 持久化
+
+#### 4.7.4 GameSettingsManager
+
+**职责：**
+- 关卡内设置面板管理
+- 打开设置时自动暂停游戏（保存/恢复 timeScale）
+- 返回主菜单功能
+
+#### 4.7.5 GamePauseManager
+
+**职责：**
+- 关卡内暂停/继续/重开/返回主菜单
+
+---
+
+### 4.8 对话系统 (Dialogue)
+
+#### 4.8.1 DialogueManager
+
+**职责：**
+- 对话流程控制
+- 文字打字机效果
+- 对话UI显示
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `StartDialogue(DialogueAsset dialogue)` | 开始对话 |
+| `OnContinueClick()` | 继续/跳过打字 |
+| `ShowNextLine()` | 显示下一句 |
+| `TypeLine(string text)` | 打字机协程 |
+
+---
+
+## 5. 枚举定义
+
+### 5.1 CampType
+
+```csharp
+public enum CampType
+{
+    Player,  // 玩家阵营
+    Enemy    // 敌方阵营
+}
+```
+
+### 5.2 PathID
+
+```csharp
+public enum PathID
+{
+    Path_01,
+    Path_02,
+    Path_03
+    // 可扩展
+}
+```
+
+### 5.3 AttackType
+
+```csharp
+public enum AttackType
+{
+    Physical,  // 物理攻击
+    Magic      // 法术攻击
+}
+```
+
+---
+
+## 6. 工具类
+
+### 6.1 Math2DHelper
+
+**职责：** 2D数学计算辅助
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `SqDistPointToSegment()` | 点到线段最短距离平方 |
+| `MinDistancePointToPolyline()` | 点到折线最短距离 |
+
+---
+
+## 7. 游戏流程
+
+### 7.1 菜单到关卡流程
+
+1. **主菜单**
+   - 新游戏 → 选择存档栏位 → 进入 Level_1
+   - 继续游戏 → 自动加载最新存档 → 进入对应关卡
+   - 加载存档 → 选择已有存档栏位 → 进入对应关卡
+
+2. **关卡进行中**
+   - 暂停面板：暂停/继续/重开/返回主菜单
+   - 设置面板：音量/全屏/返回主菜单（打开时自动暂停）
+
+3. **胜利**
+   - 自动存档 + 标记关卡完成 → 显示胜利面板 → 下一关/返回主菜单
+
+4. **失败**
+   - 显示失败面板 → 重试/返回主菜单
+
+### 7.2 完整战斗流程
+
+1. **初始化阶段**
+   - BattleManager 初始化单例
+   - LevelPathManager 收集场景路径
+   - CardManager 生成玩家卡组卡牌UI
+
+2. **战斗开始**
+   - BattleManager 启动 WaveGenerator
+   - 费用开始自动增长
+
+3. **波次循环**
+   - WaveGenerator 按配置生成敌人
+   - 敌人沿指定路径向目标塔移动
+
+4. **玩家操作**
+   - 玩家选择卡牌
+   - 进入部署模式，显示同阵营路线
+   - 选择路线并部署单位
+   - 单位沿路径前进并战斗
+
+5. **胜负判定**
+   - 双塔互相攻击
+   - 一方塔死亡触发胜负判定
+   - 暂停游戏，显示结果面板
+
+---
+
+## 8. 项目配置
+
+### 8.1 Unity包依赖
+
+根据 [Packages/manifest.json](file:///d:/project/My%20project/Packages/manifest.json)，主要依赖：
+
+- `com.unity.feature.2d` - 2D功能包
+- `com.unity.textmeshpro` - 文本渲染
+- `com.unity.ugui` - UI系统
+- `com.unity.modules.physics2d` - 2D物理
+
+### 8.2 标签与层
+
+项目使用以下标签/层：
+
+- `BattleCanvas` - 战斗UI画布标签
+- `EnemyUnit` - 敌方单位层
+- `PlayerUnit` - 玩家单位层
+
+### 8.3 构建场景列表
+
+- `MenuScene.unity` — 主菜单
+- `Level_1.unity` — 关卡 1
+- `TestLevelScene.unity` — 测试关卡
+
+---
+
+## 9. 开发指南
+
+### 9.1 新增卡牌
+
+1. 创建 CardData 资产（右键 → Battle → Card Data）
+2. 配置卡牌属性（费用、冷却、图标、单位预制体）
+3. 将卡牌添加到 PlayerDeck 配置
+
+### 9.2 新增路径
+
+1. 在场景创建空物体，添加 PathManager 组件
+2. 配置阵营和路径ID
+3. 添加路径点子物体
+4. LevelPathManager 会自动收集
+
+### 9.3 新增波次
+
+1. 创建 WaveList 配置资产
+2. 添加 WaveData 条目
+3. 配置每个波次的阵营、路径、单位、数量、间隔
+4. 将 WaveList 绑定到 BattleManager
+
+### 9.4 新增单位
+
+1. 创建单位预制体
+2. 添加 UnitAttr、UnitMovement、UnitCombat、UnitAI 组件
+3. 配置单位属性
+4. 关联到卡牌或波次配置
+
+### 9.5 新增关卡
+
+1. 将关卡场景添加到 Build Settings
+2. 在 `SaveManager.levelSceneOrder` 数组中按顺序追加关卡场景名
+
+### 9.6 存档栏位数调整
+
+修改 `SaveManager.SlotCount` 常量，SaveSlotPanel 会自动适配。
+
+---
+
+## 10. 关键文件索引
+
+| 文件 | 说明 |
+|------|------|
+| [BattleManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Battle/BattleManager.cs) | 战斗核心管理器 |
+| [TowerBase.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Battle/TowerBase.cs) | 防御塔基础脚本 |
+| [CardManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardManager.cs) | 卡牌管理器 |
+| [CardData.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardData.cs) | 卡牌数据 |
+| [CardDeploy.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardDeploy.cs) | 卡牌部署系统 |
+| [PathManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/PathManager.cs) | 单条路径管理 |
+| [LevelPathManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/LevelPathManager.cs) | 场景路径中心 |
+| [WaveGenerator.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Wave/WaveGenerator.cs) | 波次生成器 |
+| [UnitAttr.cs](file:///d:/project/My%20project/Assets/Unit/GenericScript/UnitAttr.cs) | 单位属性 |
+| [UnitMovement.cs](file:///d:/project/My%20project/Assets/Unit/GenericScript/UnitMovement.cs) | 单位移动 |
+| [Math2DHelper.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Helper/Math2DHelper.cs) | 2D数学工具 |
+| [DialogueManager.cs](file:///d:/project/My%20project/Assets/Dialogue/DialogueManager.cs) | 对话管理器 |
+| [SaveManager.cs](file:///d:/project/My%20project/Assets/Save/SaveManager.cs) | 存档管理器（静态） |
+| [GameSaveData.cs](file:///d:/project/My%20project/Assets/Save/GameSaveData.cs) | 存档数据结构 |
+| [MenuManager.cs](file:///d:/project/My%20project/Assets/Menu/MenuManager.cs) | 主菜单管理器 |
+| [MenuSettingsManager.cs](file:///d:/project/My%20project/Assets/Menu/MenuSettingsManager.cs) | 菜单设置管理器 |
+| [SaveSlotPanel.cs](file:///d:/project/My%20project/Assets/Menu/SaveSlotPanel.cs) | 存档栏位选择面板 |
+| [GameSettingsManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/UI/GameSettingsManager.cs) | 关卡内设置管理器 |
+| [GamePauseManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/UI/GamePauseManager.cs) | 暂停/重开/返回菜单 |
+
+---
+
+## 11. 扩展建议
+
+1. **卡牌系统扩展**
+   - 添加特殊效果卡牌（AOE、治疗、Buff等）
+   - 支持卡牌升级与组合
+   - 实现卡牌抽卡机制
+
+2. **单位系统扩展**
+   - 添加更多单位类型（远程、法术、治疗等）
+   - 实现单位技能系统
+   - 添加单位升级与进化
+
+3. **路径系统扩展**
+   - 支持动态路径变化
+   - 添加路径事件（陷阱、buff点）
+   - 支持路径分支与选择
+
+4. **存档系统扩展**
+   - 支持存档导入/导出
+   - 添加自动存档（波次中途）
+   - 支持云存档
+
+5. **UI/UX优化**
+   - 关卡选择地图界面
+   - 战斗统计面板
+   - 优化卡牌拖动与部署手感
+
+---
+
+*文档更新时间：2026-05-24*
