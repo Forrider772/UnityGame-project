@@ -23,9 +23,12 @@ public class PathManager : MonoBehaviour
 
     private void Awake()
     {
-        // 获取 PathVisualManager 组件（由 RequireComponent 保证存在）
+        // 获取 PathVisualManager 组件引用（由 RequireComponent 保证存在）
         visualManager = GetComponent<PathVisualManager>();
+    }
 
+    private void Start()
+    {
         // 将 Transform 列表转换为 Vector2 数组供 LineRenderer 使用
         Vector2[] waypoints = new Vector2[pathPoints.Count];
         for (int i = 0; i < pathPoints.Count; i++)
@@ -34,7 +37,7 @@ public class PathManager : MonoBehaviour
                 waypoints[i] = pathPoints[i].position;
         }
 
-        // 初始化视觉管理器
+        // 初始化视觉管理器（放在 Start 中确保 PathVisualManager.Awake 已执行完毕）
         visualManager.Initialize(waypoints);
 
         // 初始时隐藏路线（未进入部署模式）

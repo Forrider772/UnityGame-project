@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c3b8b2baa9c6c2468316775bd6d2516, type: 3}
   m_Name: 1
   m_EditorClassIdentifier: 
+  camp: 0
   cardID: 3
   cardName: 3
   cost: 5
-  cooldown: 2
+  cooldown: 1
   icon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
   unitPrefab: {fileID: 6656251850606900385, guid: f1686d4f0e1e0f24e965511cb89da78a, type: 3}
