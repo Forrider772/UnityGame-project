@@ -15,6 +15,7 @@ public class UnitMovement : MonoBehaviour
 
     private UnitAttr attr;       // 自身属性引用
     private int currentPathIndex;// 当前行走到的路径点索引
+    private bool isStopped;      // 驻扎等情况下暂停移动
 
     /// <summary>
     /// 初始化：自动获取同物体上的属性组件
@@ -35,10 +36,27 @@ public class UnitMovement : MonoBehaviour
     }
     
     /// <summary>
+    /// 暂停移动（驻扎时调用）
+    /// </summary>
+    public void StopMovement()
+    {
+        isStopped = true;
+    }
+
+    /// <summary>
+    /// 恢复移动（离开驻扎时调用）
+    /// </summary>
+    public void ResumeMovement()
+    {
+        isStopped = false;
+    }
+
+    /// <summary>
     /// 沿预设平滑路径匀速前进
     /// </summary>
     public void MoveAlongPath()
     {
+        if (isStopped) return;
         // 路径为空 或 已经走到终点，直接返回
         if (pathManager == null || currentPathIndex >= pathManager.pathPoints.Count)
             return;

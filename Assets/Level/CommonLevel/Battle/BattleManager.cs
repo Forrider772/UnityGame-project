@@ -80,12 +80,16 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 费用自动增长，每秒增加 costAddSpeed 点
+    /// 费用自动增长，基础速度 + 资源点占领增益
     /// </summary>
     void CostAdd()
     {
         if (nowCost < maxCost)
-            nowCost += (Time.deltaTime * costAddSpeed);
+        {
+            float bonus = ResourcePointManager.Instance != null
+                ? ResourcePointManager.Instance.GetTotalBonus(CampType.Player) : 0f;
+            nowCost += Time.deltaTime * (costAddSpeed + bonus);
+        }
     }
 
     /// <summary>

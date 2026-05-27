@@ -37,4 +37,9 @@ public class UnitAttr : MonoBehaviour
 
     [HideInInspector]
     public float currentHp; // 当前运行时血量
+
+    [HideInInspector]
+    public bool isGarrisoned;          // 是否处于驻扎状态
+    [HideInInspector]
+    public ResourcePoint garrisonedPoint; // 驻扎的资源点引用
 }
