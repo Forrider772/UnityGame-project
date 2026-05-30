@@ -13,9 +13,9 @@ public class UnitMovement : MonoBehaviour
     [Header("路径绑定")]
     public PathManager pathManager; // 所属路径管理器
 
-    private UnitAttr attr;       // 自身属性引用
-    private int currentPathIndex;// 当前行走到的路径点索引
-    private bool isStopped;      // 驻扎等情况下暂停移动
+    private UnitAttr attr;         // 自身属性引用
+    private int currentPathIndex;  // 当前行走到的路径点索引
+    private bool isStopped;        // 驻扎等情况下暂停移动
 
     /// <summary>
     /// 初始化：自动获取同物体上的属性组件
@@ -34,7 +34,7 @@ public class UnitMovement : MonoBehaviour
         // 重置路径点索引，防止复用残留
         currentPathIndex = 0;
     }
-    
+
     /// <summary>
     /// 暂停移动（驻扎时调用）
     /// </summary>
@@ -52,7 +52,7 @@ public class UnitMovement : MonoBehaviour
     }
 
     /// <summary>
-    /// 沿预设平滑路径匀速前进
+    /// 沿预设平滑路径匀速前进（地面单位专用）
     /// </summary>
     public void MoveAlongPath()
     {
@@ -84,11 +84,25 @@ public class UnitMovement : MonoBehaviour
     /// <param name="targetPos">目标坐标</param>
     public void MoveToTarget(Vector2 targetPos)
     {
+        if (isStopped) return;
+        
         transform.position = Vector2.MoveTowards(
             transform.position,
             targetPos,
             attr.moveSpeed * Time.deltaTime
         );
+    }
+
+    /// <summary>
+    /// 飞行单位专用：直线飞向目标点（新增）
+    /// </summary>
+    public void FlyToTarget(Vector3 targetPos)
+    {
+        if (isStopped) return;
+        
+        Vector3 moveDir = (targetPos - transform.position).normalized;
+        transform.Translate(moveDir * attr.moveSpeed * Time.deltaTime, Space.World);
+        transform.right = moveDir;
     }
 
     /// <summary>
@@ -98,5 +112,13 @@ public class UnitMovement : MonoBehaviour
     public bool IsPathCompleted()
     {
         return pathManager == null || currentPathIndex >= pathManager.pathPoints.Count;
+    }
+
+    /// <summary>
+    /// 判断飞行单位是否到达目标（新增）
+    /// </summary>
+    public bool IsFlyingTargetReached(Vector3 targetPos, float threshold = 0.5f)
+    {
+        return Vector3.Distance(transform.position, targetPos) < threshold;
     }
 }

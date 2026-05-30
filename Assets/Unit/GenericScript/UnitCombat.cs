@@ -15,7 +15,7 @@ public class UnitCombat : MonoBehaviour
     private UnitMovement movement; // 移动模块引用
     private UnitUI unitUI;         // UI模块引用
 
-    private Transform currentTarget;// 当前攻击目标
+    public Transform currentTarget; // 当前攻击目标（改为public，方便外部访问）
     private float attackTimer;     // 攻击冷却计时器
 
     /// <summary>
@@ -31,6 +31,12 @@ public class UnitCombat : MonoBehaviour
         attr.currentHp = attr.maxHp;
     }
 
+    void Update()
+    {
+        // 攻击冷却计时
+        attackTimer += Time.deltaTime;
+    }
+
     /// <summary>
     /// 搜寻范围内敌方战斗单位（只找小兵/怪物，不找塔）
     /// </summary>
@@ -44,11 +50,29 @@ public class UnitCombat : MonoBehaviour
 
         // 圆形范围检测
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, attr.detectRange, targetMask);
-
+        
         if (hits.Length > 0)
         {
-            currentTarget = hits[0].transform;
-            return true;
+            // 筛选可攻击目标（核心新增逻辑）
+            foreach (var hit in hits)
+            {
+                UnitAttr targetAttr = hit.GetComponent<UnitAttr>();
+                
+                // 跳过死亡单位和无效单位
+                if (targetAttr == null || targetAttr.currentHp <= 0) continue;
+
+                // ✅ 核心规则：近战单位 不能攻击 飞行单位
+                // 远程单位和防御塔 可以攻击 所有单位
+                if (attr.attackRangeType == AttackRangeType.Melee 
+                    && targetAttr.unitType == UnitType.Flying)
+                {
+                    continue; // 直接跳过，不锁定
+                }
+
+                // 找到第一个有效目标
+                currentTarget = hit.transform;
+                return true;
+            }
         }
 
         // 无敌人清空目标
@@ -61,7 +85,7 @@ public class UnitCombat : MonoBehaviour
     /// </summary>
     public void SetTargetToTower()
     {
-        // ---------------- 安全判空 ----------------
+        // ------------ 安全判空 ------------
         if (attr.camp == CampType.Player)
         {
             // 敌方塔存在 → 锁定
@@ -109,7 +133,6 @@ public class UnitCombat : MonoBehaviour
         }
 
         // 攻击冷却计时
-        attackTimer += Time.deltaTime;
         // 冷却结束发起攻击
         if (attackTimer >= attr.atkCD)
         {
@@ -136,8 +159,7 @@ public class UnitCombat : MonoBehaviour
     }
 
     /// <summary>
-    /// 受伤害对外接口
-    /// 自动区分物理/法术防御结算减伤
+    /// 受伤害对外接口，自动区分物理/法术防御结算减伤
     /// </summary>
     /// <param name="damage">原始伤害</param>
     /// <param name="type">伤害类型</param>
@@ -146,14 +168,16 @@ public class UnitCombat : MonoBehaviour
         float finalDmg = damage;
 
         // 物理伤害结算物理防御
-        if (type == AttackType.Physical){
+        if (type == AttackType.Physical)
+        {
             finalDmg = Mathf.Max(1f, damage - attr.physicalDefense);
-            Debug.Log($"{gameObject.name} 受到【物理伤害】：原始伤害{damage} | 物理防御{attr.physicalDefense} | 最终扣血{finalDmg}");
-        }    
+            Debug.Log($"{gameObject.name} 受到【物理伤害】：原始伤害 {damage} | 物理防御 {attr.physicalDefense} | 最终扣血 {finalDmg}");
+        }
         // 法术伤害结算法术防御
-        else if (type == AttackType.Magic){
+        else if (type == AttackType.Magic)
+        {
             finalDmg = Mathf.Max(1f, damage - attr.magicDefense);
-            Debug.Log($"{gameObject.name} 受到【法术伤害】：原始伤害{damage} | 法术防御{attr.magicDefense} | 最终扣血{finalDmg}");
+            Debug.Log($"{gameObject.name} 受到【法术伤害】：原始伤害 {damage} | 法术防御 {attr.magicDefense} | 最终扣血 {finalDmg}");
         }
 
         // 扣除血量
@@ -162,9 +186,11 @@ public class UnitCombat : MonoBehaviour
         // 调用UI刷新血条
         unitUI.RefreshHp(attr.currentHp);
 
-        // 血量低于0 触发死亡
+        // 血量低于0触发死亡
         if (attr.currentHp <= 0)
+        {
             Die();
+        }
     }
 
     /// <summary>

@@ -8,9 +8,9 @@ using UnityEngine;
 /// </summary>
 public class UnitUI : MonoBehaviour
 {
-    private UnitAttr attr;     // 自身属性引用
-    private HPBar hpBar;       // 血条组件引用
-    private Canvas battleCanvas;// 场景战斗UI画布
+    private UnitAttr attr;  // 自身属性引用
+    private HPBar hpBar;    // 血条组件引用
+    private Canvas battleCanvas; // 场景战斗UI画布
 
     /// <summary>
     /// 自动获取同物体属性组件
@@ -34,7 +34,8 @@ public class UnitUI : MonoBehaviour
     void InitHpBar()
     {
         // 没有血条预制体直接返回
-        if (attr.hpBarPrefab == null) return;
+        if (attr.hpBarPrefab == null)
+            return;
 
         // 查找全局战斗画布
         battleCanvas = GameObject.FindGameObjectWithTag("BattleCanvas").GetComponent<Canvas>();
@@ -45,6 +46,13 @@ public class UnitUI : MonoBehaviour
         // 绑定跟随目标和最大血量
         hpBar.target = transform;
         hpBar.SetMaxHp(attr.maxHp);
+
+        // ✅ 新增：飞行单位血条位置调整
+        if (attr.unitType == UnitType.Flying)
+        {
+            // 飞行单位血条显示在更高的位置
+            hpBar.offset = new Vector3(0, 2f, 0);
+        }
     }
 
     /// <summary>
