@@ -12,9 +12,13 @@ using UnityEngine;
 /// </summary>
 public class UnitAI : MonoBehaviour
 {
-    private UnitCombat combat;     // 战斗模块引用
+    private UnitCombat combat;   // 战斗模块引用
     private UnitMovement movement; // 移动模块引用
-    private UnitAttr attr;         // 属性引用
+    private UnitAttr attr;       // 属性引用
+
+    // 敌方基地/防御塔坐标（在Inspector中设置）
+    [Header("目标配置")]
+    public Vector3 enemyBasePosition;
 
     /// <summary>
     /// 自动获取同物体依赖组件
@@ -45,18 +49,39 @@ public class UnitAI : MonoBehaviour
         // 优先级3：资源点驻扎/抢占判定
         else if (TryHandleResourcePoint())
         {
-            // 驻扎逻辑在 TryHandleResourcePoint 内部处理
+            // 驻扎逻辑在TryHandleResourcePoint内部处理
         }
-        // 优先级4：无敌人 + 路径未走完 → 沿路径行走
-        else if (!movement.IsPathCompleted())
-        {
-            movement.MoveAlongPath();
-        }
-        // 优先级5：路径终点 → 攻击防御塔
+        // 优先级3：无敌人 + 路径未走完 → 移动（新增分支）
         else
         {
-            combat.SetTargetToTower();
-            combat.TryAttack();
+            if (attr.unitType == UnitType.Ground)
+            {
+                // 地面单位：沿预设路径行走（原有逻辑不变）
+                if (!movement.IsPathCompleted())
+                {
+                    movement.MoveAlongPath();
+                }
+                else
+                {
+                    // 路径走完攻击防御塔
+                    combat.SetTargetToTower();
+                    combat.TryAttack();
+                }
+            }
+            else if (attr.unitType == UnitType.Flying)
+            {
+                // 飞行单位：直接直线飞向敌方基地
+                if (!movement.IsFlyingTargetReached(enemyBasePosition))
+                {
+                    movement.FlyToTarget(enemyBasePosition);
+                }
+                else
+                {
+                    // 到达基地后攻击基地
+                    combat.SetTargetToTower();
+                    combat.TryAttack();
+                }
+            }
         }
     }
 
@@ -114,18 +139,17 @@ public class UnitAI : MonoBehaviour
     }
 
     /// <summary>
-    /// 尝试处理资源点交互（驻扎或抢占），成功返回 true
+    /// 尝试处理资源点交互（驻扎或抢占），成功返回true
     /// </summary>
     bool TryHandleResourcePoint()
     {
         if (movement.pathManager == null) return false;
         if (ResourcePointManager.Instance == null) return false;
 
-        ResourcePoint rp = ResourcePointManager.Instance.GetResourcePointOnPath(
-            movement.pathManager.pathId);
-
+        ResourcePoint rp = ResourcePointManager.Instance.GetResourcePointOnPath(movement.pathManager.pathId);
         if (rp == null) return false;
-        if (!rp.IsUnitInRange(gameObject)) return false;
+        if (!rp.IsUnitInRange(gameObject))
+            return false;
 
         // 情况A/B: 可驻扎 → 驻扎
         if (rp.CanGarrison(gameObject))

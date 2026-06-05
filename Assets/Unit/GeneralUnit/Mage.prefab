@@ -159,7 +159,11 @@ MonoBehaviour:
   physicalDefense: 0
   magicDefense: 50
   hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
+  unitType: 0
+  attackRangeType: 1
   currentHp: 0
+  isGarrisoned: 0
+  garrisonedPoint: {fileID: 0}
 --- !u!114 &330323810415328444
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -185,6 +189,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26d8a02bc9b95bf4590ead200f9f7ecb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  enemyBasePosition: {x: 0, y: 0, z: 0}
 --- !u!114 &-7181395724997178257
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -209,6 +214,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdbc4171070ca8d4991224b9bcc5b968, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currentTarget: {fileID: 0}
 --- !u!114 &2055363280598156142
 MonoBehaviour:
   m_ObjectHideFlags: 0
