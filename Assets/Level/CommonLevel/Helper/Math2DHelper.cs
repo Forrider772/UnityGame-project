@@ -55,4 +55,49 @@ public static class Math2DHelper
         // 最后再开方得到实际距离
         return Mathf.Sqrt(minSqDist);
     }
+
+    /// <summary>
+    /// 计算点 P 到折线的最近点坐标
+    /// 用于驻扎点放置时确定精确的世界坐标吸附位置
+    /// </summary>
+    /// <param name="point">点P</param>
+    /// <param name="polyline">折线的顶点数组（顺序排列）</param>
+    /// <param name="segmentIndex">最近点所在的路段索引（起点在 polyline 中的下标）</param>
+    /// <param name="t">最近点在线段上的插值参数 [0,1]</param>
+    /// <returns>最近点世界坐标</returns>
+    public static Vector2 ClosestPointOnPolyline(Vector2 point, Vector2[] polyline,
+        out int segmentIndex, out float t)
+    {
+        segmentIndex = 0;
+        t = 0f;
+
+        if (polyline == null || polyline.Length < 2)
+            return point;
+
+        float minSqDist = float.MaxValue;
+        Vector2 bestPoint = point;
+
+        for (int i = 0; i < polyline.Length - 1; i++)
+        {
+            Vector2 a = polyline[i];
+            Vector2 b = polyline[i + 1];
+            Vector2 ab = b - a;
+            Vector2 ap = point - a;
+
+            float proj = Vector2.Dot(ap, ab) / Vector2.Dot(ab, ab);
+            float clampedT = Mathf.Clamp01(proj);
+            Vector2 closest = a + clampedT * ab;
+
+            float sqDist = (point - closest).sqrMagnitude;
+            if (sqDist < minSqDist)
+            {
+                minSqDist = sqDist;
+                bestPoint = closest;
+                segmentIndex = i;
+                t = clampedT;
+            }
+        }
+
+        return bestPoint;
+    }
 }

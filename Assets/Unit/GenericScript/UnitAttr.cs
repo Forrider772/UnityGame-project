@@ -42,4 +42,6 @@ public class UnitAttr : MonoBehaviour
     public bool isGarrisoned;          // 是否处于驻扎状态
     [HideInInspector]
     public ResourcePoint garrisonedPoint; // 驻扎的资源点引用
+    [HideInInspector]
+    public GarrisonPoint garrisonedGarrisonPoint; // 驻扎的驻扎点引用（与 garrisonedPoint 互斥）
 }

@@ -88,6 +88,18 @@ public class PathVisualManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 设置路线透明度（0=全透明，1=不透明）
+    /// 用于半透明显示模式
+    /// </summary>
+    public void SetAlpha(float alpha)
+    {
+        Color c = lineRenderer.startColor;
+        c.a = alpha;
+        lineRenderer.startColor = c;
+        lineRenderer.endColor = c;
+    }
+
+    /// <summary>
     /// 设置高亮状态，根据当前选中的特效类型改变视觉表现
     /// </summary>
     /// <param name="highlight">true 进入高亮，false 恢复正常</param>

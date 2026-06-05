@@ -5,9 +5,10 @@ using UnityEngine;
 /// 职责：只做行为判断，不实现具体移动、攻击细节
 /// 行为优先级：
 /// 1. 范围内有敌方单位 → 脱离驻扎 → 战斗追击攻击
-/// 2. 资源点范围内 → 驻扎/抢占判定
-/// 3. 无敌人且路径未走完 → 沿平滑路径前进
-/// 4. 路径已走完 → 锁定并攻击对方防御塔
+/// 2. 驻扎点范围内 → 驻扎/抢占判定
+/// 3. 资源点范围内 → 驻扎/抢占判定
+/// 4. 无敌人且路径未走完 → 沿平滑路径前进
+/// 5. 路径已走完 → 锁定并攻击对方防御塔
 /// </summary>
 public class UnitAI : MonoBehaviour
 {
@@ -36,17 +37,22 @@ public class UnitAI : MonoBehaviour
             LeaveGarrisonIfNeeded();
             combat.TryAttack();
         }
-        // 优先级2：资源点驻扎/抢占判定
+        // 优先级2：驻扎点驻扎/抢占判定 [新增]
+        else if (TryHandleGarrisonPoint())
+        {
+            // 驻扎逻辑在 TryHandleGarrisonPoint 内部处理
+        }
+        // 优先级3：资源点驻扎/抢占判定
         else if (TryHandleResourcePoint())
         {
             // 驻扎逻辑在 TryHandleResourcePoint 内部处理
         }
-        // 优先级3：无敌人 + 路径未走完 → 沿路径行走
+        // 优先级4：无敌人 + 路径未走完 → 沿路径行走
         else if (!movement.IsPathCompleted())
         {
             movement.MoveAlongPath();
         }
-        // 优先级4：路径终点 → 攻击防御塔
+        // 优先级5：路径终点 → 攻击防御塔
         else
         {
             combat.SetTargetToTower();
@@ -56,12 +62,55 @@ public class UnitAI : MonoBehaviour
 
     /// <summary>
     /// 驻扎单位检测到敌人时，先脱离驻扎再战斗
+    /// 同时处理资源点和驻扎点
     /// </summary>
     void LeaveGarrisonIfNeeded()
     {
-        if (!attr.isGarrisoned || attr.garrisonedPoint == null) return;
-        attr.garrisonedPoint.RemoveGarrison(gameObject);
-        movement.ResumeMovement();
+        if (!attr.isGarrisoned) return;
+
+        if (attr.garrisonedPoint != null)
+        {
+            attr.garrisonedPoint.RemoveGarrison(gameObject);
+            movement.ResumeMovement();
+        }
+        else if (attr.garrisonedGarrisonPoint != null)
+        {
+            attr.garrisonedGarrisonPoint.RemoveGarrison(gameObject);
+            movement.ResumeMovement();
+        }
+    }
+
+    /// <summary>
+    /// 尝试处理驻扎点交互（驻扎或抢占），成功返回 true
+    /// </summary>
+    bool TryHandleGarrisonPoint()
+    {
+        if (GarrisonPointManager.Instance == null) return false;
+
+        GarrisonPoint gp = GarrisonPointManager.Instance.GetNearestGarrisonPoint(
+            transform.position, attr.camp);
+
+        if (gp == null) return false;
+        if (!gp.IsUnitInRange(gameObject)) return false;
+
+        // 检查生效阵营：若该驻扎点对此单位阵营无效，忽略
+        if (!gp.IsEffectiveFor(attr.camp)) return false;
+
+        // 可驻扎 → 驻扎
+        if (gp.CanGarrison(gameObject))
+        {
+            gp.AddGarrison(gameObject);
+            return true;
+        }
+
+        // 敌方占领 → 触发抢占战斗
+        if (gp.occupyingCamp != null && gp.occupyingCamp != attr.camp && !gp.isContested)
+        {
+            gp.StartContest(gameObject);
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
