@@ -47,6 +47,10 @@ Assets/
 │       │   ├── PathID.cs
 │       │   ├── PathManager.cs
 │       │   └── PathVisualManager.cs
+│       ├── GarrisonPoint/    # 驻扎点系统
+│       │   ├── GarrisonPoint.cs
+│       │   ├── GarrisonPointManager.cs
+│       │   └── GarrisonPointPlacer.cs
 │       ├── UI/               # 战斗UI
 │       │   ├── GamePauseManager.cs
 │       │   ├── GameSettingsManager.cs
@@ -110,6 +114,8 @@ BattleManager (核心控制)
     │   └── CardDeploy (卡牌部署)
     │       └── LevelPathManager
     ├── TowerBase (双塔攻防)
+    ├── GarrisonPointManager (驻扎点管理)
+    │   └── GarrisonPointPlacer (驻扎点放置)
     └── SaveManager (胜利时自动存档)
 
 MenuManager (菜单控制)
@@ -240,7 +246,7 @@ public GameObject winPanel / losePanel;
 
 **部署流程：**
 1. 玩家选中卡牌 → 进入部署模式，显示同阵营路线
-2. 鼠标悬停路线 → 路线高亮
+2. 鼠标悬停路线 → 通过 `PathManager.GetClosestPoint()` 检测（支持曲线/直线）
 3. 左键点击 → 在路线起点生成单位，扣费，触发冷却
 4. 右键点击 → 退出部署模式
 
@@ -252,17 +258,45 @@ public GameObject winPanel / losePanel;
 
 **职责：**
 - 单条路径数据管理
-- 路径可视化控制
+- 路径可视化控制（运行时 + 编辑器）
 - 提供路径点查询接口
+- **Centripetal Catmull-Rom 曲线支持**
 
-**核心方法：**
+**Inspector 配置字段：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `camp` | CampType | 所属阵营 |
+| `pathId` | PathID | 路线唯一标识 |
+| `pathPoints` | List\<Transform\> | 路径点列表（子物体） |
+| `useCurve` | bool | 启用曲线（默认 false = 直线） |
+| `curveAlpha` | float | 曲线参数化指数（0.5=centripetal） |
+| `curveSamples` | int | LineRenderer 采样精度（默认15） |
+
+**公共 API：**
 
 | 方法 | 功能 |
 |------|------|
-| `SetVisible(bool visible)` | 设置路线是否可见 |
-| `SetHighlight(bool highlight)` | 设置路线高亮状态 |
+| `SetVisible(bool)` | 设置路线是否可见 |
+| `SetHighlight(bool)` | 设置路线高亮状态 |
 | `GetStartPoint()` | 获取路线起点坐标 |
-| `GetWaypoints2D()` | 获取所有路径点 |
+| `GetWaypoints2D()` | 获取路径点（曲线模式返回密集采样） |
+| `GetCurvePoint(float t)` | 归一化距离 [0,1] → 曲线上的世界坐标 |
+| `GetCurveTangent(float t)` | 归一化距离 → 切线方向 |
+| `GetTotalArcLength()` | 路径总弧长 |
+| `GetClosestPoint(Vector2)` | 点到路径最近点（Newton 迭代，不采样） |
+
+**编辑器功能：**
+- `[SelectionBase]`：点击子路径点自动选中父级 PathManager
+- **选中高亮**：金黄粗线 + 实心方向箭头 + 路径标签
+- **未选中**：半透明蓝细线 + 空心方向箭头
+- **右键菜单**：复制路径（反向/切换阵营/两者组合）
+
+**曲线系统设计：**
+- 采用 Centripetal Catmull-Rom（alpha=0.5），路径点间距不均时无尖角/回环
+- 弧长用 Gauss-Legendre 5 点求积预计算
+- 最近点用粗扫 + Newton 迭代（每段 7 次求值，远少于密集采样）
+- 段内弧长→s 映射表（LUT）保证匀速运动
 
 #### 4.3.2 LevelPathManager
 
@@ -284,6 +318,48 @@ Dictionary<CampType, Dictionary<PathID, PathManager>> campPathDict
 |------|------|
 | `GetPath(CampType camp, PathID pathId)` | 获取指定路径 |
 | `GetAllPathsByCamp(CampType camp)` | 获取阵营所有路径 |
+
+#### 4.3.3 PathVisualManager
+
+**职责：**
+- 运行时路径 LineRenderer 视觉效果
+- 支持颜色切换、脉冲宽度动画
+
+**配置字段：**
+
+| 字段 | 说明 |
+|------|------|
+| `effect` | 效果类型（ColorChange/WidthPulse/ColorAndPulse） |
+| `normalColor` / `highlightColor` | 普通/高亮颜色 |
+| `normalWidth` / `highlightWidth` | 普通/高亮线宽 |
+| `pulseSpeed` | 脉冲动画速度 |
+
+#### 4.3.4 驻扎点 (GarrisonPoint)
+
+**GarrisonPoint** — 动态创建的驻扎点组件，可吸附到路径上。
+
+**配置字段：**
+
+| 字段 | 说明 |
+|------|------|
+| `effectiveCamps` | 对哪些阵营生效（可多选） |
+| `garrisonRange` | 驻扎范围半径 |
+| `maxGarrison` | 最大驻扎人数 |
+| `boundPath` | 绑定的路径（吸附目标） |
+| `boundCurveT` | 归一化曲线距离 [0,1]（支持曲线定位） |
+
+**GarrisonPointManager** — 场景级单例，管理驻扎点创建/查询/删除。
+
+**核心方法：**
+
+| 方法 | 功能 |
+|------|------|
+| `CreateGarrisonPoint(pos, camps)` | 在坐标创建驻扎点（自动吸附最近路径） |
+| `CreateGarrisonPointOnPath(path, curveT, camps)` | 在路径指定位置创建驻扎点 |
+| `GetNearestGarrisonPoint(pos, camp)` | 获取对阵营生效的最近驻扎点 |
+| `RemoveGarrisonPoint(gp)` | 移除驻扎点 |
+
+**GarrisonPointPlacer** — 驻扎点放置交互（鼠标悬停→点击创建）。
 
 ---
 
@@ -340,7 +416,7 @@ public float magicDefense;          // 法术防御
 #### 4.5.2 UnitMovement
 
 **职责：**
-- 沿路径自动行走
+- 沿路径自动行走（支持曲线/直线，统一归一化距离驱动）
 - 向目标点追击
 - 判断路径是否完成
 
@@ -348,10 +424,18 @@ public float magicDefense;          // 法术防御
 
 | 方法 | 功能 |
 |------|------|
-| `SetPath(PathManager path)` | 设置行走路径 |
-| `MoveAlongPath()` | 沿预设路径前进 |
+| `SetPath(PathManager path)` | 设置行走路径，缓存总弧长 |
+| `MoveAlongPath()` | 沿路径匀速前进（弧长参数化保证曲线匀速） |
 | `MoveToTarget(Vector2 targetPos)` | 向目标点追击 |
+| `FlyToTarget(Vector3 targetPos)` | 飞行单位直线飞向目标 |
 | `IsPathCompleted()` | 判断路径是否走完 |
+| `StopMovement()` / `ResumeMovement()` | 暂停/恢复移动（驻扎用） |
+
+**移动机制：**
+- 使用 `pathProgress`（归一化距离 [0,1]）替代路径点索引
+- 每帧：`pathProgress += (speed × dt) / totalArcLength`
+- 位置通过 `pathManager.GetCurvePoint(pathProgress)` 获取
+- 曲线模式由 PathManager 的弧长 LUT 保证匀速
 
 ---
 
@@ -540,6 +624,7 @@ public enum AttackType
 |------|------|
 | `SqDistPointToSegment()` | 点到线段最短距离平方 |
 | `MinDistancePointToPolyline()` | 点到折线最短距离 |
+| `ClosestPointOnPolyline()` | 点到折线最近点坐标 + 段索引 + 插值 t |
 
 ---
 
@@ -666,8 +751,12 @@ public enum AttackType
 | [CardManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardManager.cs) | 卡牌管理器 |
 | [CardData.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardData.cs) | 卡牌数据 |
 | [CardDeploy.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardDeploy.cs) | 卡牌部署系统 |
-| [PathManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/PathManager.cs) | 单条路径管理 |
+| [PathManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/PathManager.cs) | 单条路径管理（含曲线系统） |
 | [LevelPathManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/LevelPathManager.cs) | 场景路径中心 |
+| [PathVisualManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/PathVisualManager.cs) | 路径视觉效果管理 |
+| [GarrisonPoint.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/GarrisonPoint/GarrisonPoint.cs) | 驻扎点组件 |
+| [GarrisonPointManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/GarrisonPoint/GarrisonPointManager.cs) | 驻扎点管理器（场景级单例） |
+| [GarrisonPointPlacer.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/GarrisonPoint/GarrisonPointPlacer.cs) | 驻扎点放置交互 |
 | [WaveGenerator.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Wave/WaveGenerator.cs) | 波次生成器 |
 | [UnitAttr.cs](file:///d:/project/My%20project/Assets/Unit/GenericScript/UnitAttr.cs) | 单位属性 |
 | [UnitMovement.cs](file:///d:/project/My%20project/Assets/Unit/GenericScript/UnitMovement.cs) | 单位移动 |
@@ -696,9 +785,9 @@ public enum AttackType
    - 添加单位升级与进化
 
 3. **路径系统扩展**
-   - 支持动态路径变化
    - 添加路径事件（陷阱、buff点）
    - 支持路径分支与选择
+   - ~~曲线路径~~（✅ 已实现 Centripetal CR 曲线）
 
 4. **存档系统扩展**
    - 支持存档导入/导出
@@ -712,4 +801,4 @@ public enum AttackType
 
 ---
 
-*文档更新时间：2026-05-24*
+*文档更新时间：2026-06-10*

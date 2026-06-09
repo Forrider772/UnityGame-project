@@ -41,8 +41,7 @@ public class GarrisonPointPlacer : MonoBehaviour
     private List<CampType> selectedCamps = new List<CampType>();
     private List<PathManager> allPaths = new List<PathManager>();
     private PathManager currentHoveredPath;
-    private int currentSegmentIndex;
-    private float currentSegmentT;
+    private float currentCurveT;
     private Camera mainCamera;
 
     // 悬浮圆形指示器
@@ -61,29 +60,22 @@ public class GarrisonPointPlacer : MonoBehaviour
 
         Vector2 mouseWorldPos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
 
-        // 查找鼠标下方最近的路径路段
+        // 查找鼠标下方最近的路径（使用 GetClosestPoint 统一处理曲线/直线）
         PathManager hitPath = null;
-        int segIndex = 0;
-        float segT = 0f;
+        float bestCurveT = 0f;
         Vector2 snapPoint = mouseWorldPos;
         float minDist = hoverThreshold;
 
         foreach (var path in allPaths)
         {
-            if (path == null || path.pathPoints.Count < 2) continue;
-
-            Vector2[] waypoints = path.GetWaypoints2D();
-            float dist = Math2DHelper.MinDistancePointToPolyline(mouseWorldPos, waypoints);
-            if (dist < minDist)
+            if (path == null) continue;
+            var result = path.GetClosestPoint(mouseWorldPos);
+            if (result.distance < minDist)
             {
-                minDist = dist;
-                int tempSeg;
-                float tempT;
-                snapPoint = Math2DHelper.ClosestPointOnPolyline(
-                    mouseWorldPos, waypoints, out tempSeg, out tempT);
+                minDist = result.distance;
                 hitPath = path;
-                segIndex = tempSeg;
-                segT = tempT;
+                snapPoint = result.point;
+                bestCurveT = result.curveT;
             }
         }
 
@@ -91,8 +83,7 @@ public class GarrisonPointPlacer : MonoBehaviour
 
         if (hitPath != null)
         {
-            currentSegmentIndex = segIndex;
-            currentSegmentT = segT;
+            currentCurveT = bestCurveT;
             ShowHoverCircle(true, snapPoint);
         }
         else
@@ -188,7 +179,7 @@ public class GarrisonPointPlacer : MonoBehaviour
         }
 
         GarrisonPointManager.Instance.CreateGarrisonPointOnPath(
-            currentHoveredPath, currentSegmentIndex, currentSegmentT, selectedCamps);
+            currentHoveredPath, currentCurveT, selectedCamps);
 
         ExitDeployMode();
     }

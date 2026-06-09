@@ -129,7 +129,7 @@ public class CardDeploy : MonoBehaviour
 
     /// <summary>
     /// 获取鼠标下方最近的路线（距离小于阈值）
-    /// 遍历所有可用路线，计算鼠标到每条路线折线的最短距离
+    /// 使用 PathManager.GetClosestPoint 统一处理曲线/直线
     /// </summary>
     /// <param name="mousePos">鼠标世界坐标</param>
     /// <returns>最近的路线，若所有路线距离均大于阈值则返回 null</returns>
@@ -141,13 +141,10 @@ public class CardDeploy : MonoBehaviour
         foreach (var path in availablePaths)
         {
             if (path == null) continue;
-            Vector2[] waypoints = path.GetWaypoints2D();
-            if (waypoints.Length < 2) continue;
-
-            float dist = Math2DHelper.MinDistancePointToPolyline(mousePos, waypoints);
-            if (dist < minDist)
+            var result = path.GetClosestPoint(mousePos);
+            if (result.distance < minDist)
             {
-                minDist = dist;
+                minDist = result.distance;
                 closest = path;
             }
         }

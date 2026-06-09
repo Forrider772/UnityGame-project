@@ -61,10 +61,9 @@ public class GarrisonPointManager : MonoBehaviour
             return null;
         }
 
-        // 遍历所有阵营的所有路径，找最近路段
+        // 遍历所有阵营的所有路径，使用 GetClosestPoint 统一处理曲线/直线
         PathManager bestPath = null;
-        int bestSegIndex = 0;
-        float bestT = 0f;
+        float bestCurveT = 0f;
         Vector2 bestSnapPoint = worldPosition;
         float bestDist = snapMaxDistance;
 
@@ -73,16 +72,14 @@ public class GarrisonPointManager : MonoBehaviour
             List<PathManager> paths = LevelPathManager.Instance.GetAllPathsByCamp(camp);
             foreach (var path in paths)
             {
-                if (path == null || path.pathPoints.Count < 2) continue;
-
-                Vector2[] waypoints = path.GetWaypoints2D();
-                float dist = Math2DHelper.MinDistancePointToPolyline(worldPosition, waypoints);
-                if (dist < bestDist)
+                if (path == null) continue;
+                var result = path.GetClosestPoint(worldPosition);
+                if (result.distance < bestDist)
                 {
-                    bestDist = dist;
+                    bestDist = result.distance;
                     bestPath = path;
-                    bestSnapPoint = Math2DHelper.ClosestPointOnPolyline(
-                        worldPosition, waypoints, out bestSegIndex, out bestT);
+                    bestSnapPoint = result.point;
+                    bestCurveT = result.curveT;
                 }
             }
         }
@@ -93,19 +90,18 @@ public class GarrisonPointManager : MonoBehaviour
             return null;
         }
 
-        return CreateGarrisonPointOnPath(bestPath, bestSegIndex, bestT, effectiveCamps);
+        return CreateGarrisonPointOnPath(bestPath, bestCurveT, effectiveCamps);
     }
 
     /// <summary>
-    /// 在指定路径的指定路段上创建驻扎点
+    /// 在指定路径的指定归一化位置创建驻扎点
     /// </summary>
     /// <param name="path">目标路径</param>
-    /// <param name="segmentIndex">路段索引 [0, pathPoints.Count-2]</param>
-    /// <param name="t">线段上的插值参数 [0,1]</param>
+    /// <param name="curveT">归一化曲线距离 [0,1]</param>
     /// <param name="effectiveCamps">生效阵营列表</param>
     /// <returns>创建的 GarrisonPoint</returns>
     public GarrisonPoint CreateGarrisonPointOnPath(
-        PathManager path, int segmentIndex, float t, List<CampType> effectiveCamps)
+        PathManager path, float curveT, List<CampType> effectiveCamps)
     {
         if (garrisonPointPrefab == null)
         {
@@ -113,20 +109,30 @@ public class GarrisonPointManager : MonoBehaviour
             return null;
         }
 
-        if (path == null || path.pathPoints.Count < 2)
+        if (path == null)
         {
-            Debug.LogWarning("GarrisonPointManager: 路径无效或路径点不足");
+            Debug.LogWarning("GarrisonPointManager: 路径无效");
             return null;
         }
 
-        // 限制索引范围
-        segmentIndex = Mathf.Clamp(segmentIndex, 0, path.pathPoints.Count - 2);
-        t = Mathf.Clamp01(t);
+        curveT = Mathf.Clamp01(curveT);
 
-        // 计算路段两端点，插值得到世界坐标
-        Vector2 a = path.pathPoints[segmentIndex].position;
-        Vector2 b = path.pathPoints[segmentIndex + 1].position;
-        Vector2 snapPos = Vector2.Lerp(a, b, t);
+        // 使用 PathManager 统一 API 获取曲线上的精确位置
+        Vector2 snapPos = path.GetCurvePoint(curveT);
+
+        // 反算 segmentIndex 和 segmentT（保持向后兼容）
+        int segIndex = 0;
+        float segT = 0f;
+        if (path.pathPoints != null && path.pathPoints.Count >= 2)
+        {
+            Vector2[] raw = new Vector2[path.pathPoints.Count];
+            for (int i = 0; i < path.pathPoints.Count; i++)
+            {
+                if (path.pathPoints[i] != null)
+                    raw[i] = path.pathPoints[i].position;
+            }
+            Math2DHelper.ClosestPointOnPolyline(snapPos, raw, out segIndex, out segT);
+        }
 
         // 实例化驻扎点
         GameObject go = Instantiate(garrisonPointPrefab, snapPos, Quaternion.identity);
@@ -141,13 +147,14 @@ public class GarrisonPointManager : MonoBehaviour
         // 初始化驻扎点数据
         gp.worldPosition = snapPos;
         gp.boundPath = path;
-        gp.boundSegmentIndex = segmentIndex;
-        gp.boundSegmentT = t;
+        gp.boundCurveT = curveT;
+        gp.boundSegmentIndex = segIndex;
+        gp.boundSegmentT = segT;
         gp.effectiveCamps = new List<CampType>(effectiveCamps);
 
         go.transform.position = snapPos;
 
-        Debug.Log($"驻扎点创建成功: 坐标={snapPos}, 路线={path.pathId}, 路段={segmentIndex}, 生效阵营=[{string.Join(",", effectiveCamps)}]");
+        Debug.Log($"驻扎点创建成功: 坐标={snapPos}, 路线={path.pathId}, curveT={curveT:F3}, 生效阵营=[{string.Join(",", effectiveCamps)}]");
 
         return gp;
     }

@@ -33,6 +33,10 @@ public class GarrisonPoint : MonoBehaviour
     [HideInInspector]
     public float boundSegmentT;
 
+    [HideInInspector]
+    [Tooltip("归一化曲线距离 [0,1]，用于曲线模式下的精确定位")]
+    public float boundCurveT;
+
     public CampType? occupyingCamp => _occupyingCamp;
     public int garrisonedCount => _garrisonedUnits.Count;
     public bool isContested => _isContested;
@@ -53,11 +57,19 @@ public class GarrisonPoint : MonoBehaviour
         if (_isContested)
             ResolveContest();
 
+        // 曲线模式下同步位置到路径
+        if (boundPath != null && boundCurveT >= 0f)
+        {
+            Vector2 curvePos = boundPath.GetCurvePoint(boundCurveT);
+            transform.position = curvePos;
+            worldPosition = curvePos;
+        }
+
         // 验证绑定的路径仍然有效
         if (boundPath == null || boundPath.pathPoints == null
-            || boundSegmentIndex >= boundPath.pathPoints.Count - 1)
+            || boundSegmentIndex >= boundPath.pathPoints.Count - 1
+            || boundPath.pathPoints.Count < 2)
         {
-            // 路径已失效，销毁自身
             if (GarrisonPointManager.Instance != null)
                 GarrisonPointManager.Instance.Unregister(this);
             Destroy(gameObject);
