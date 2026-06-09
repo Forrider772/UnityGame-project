@@ -2404,6 +2404,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f764fab78376004b96dc0e366664c39, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  waveGenerator: {fileID: 765256310}
   waveList: {fileID: 11400000, guid: a94f804c070544a4a820d1c305d6119b, type: 2}
   playerTower: {fileID: 557493288}
   enemyTower: {fileID: 517911809}
@@ -2446,6 +2447,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75e0ad88cb33590418ea511fa05d3390, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  defaultSpawnPoint: {fileID: 0}
 --- !u!114 &765256311
 MonoBehaviour:
   m_ObjectHideFlags: 0

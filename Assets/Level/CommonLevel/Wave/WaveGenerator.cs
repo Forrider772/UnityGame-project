@@ -1,78 +1,191 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 波次生成器
+/// 波次生成器（实例组件，场景中可挂多个同时运行）
+///
 /// 流程：
 /// 1. 读取本关波次列表配置
-/// 2. 根据阵营和路径ID从LevelPathManager拿到真实路径
-/// 3. 生成单位 → 给UnitMovement赋值路径
+/// 2. 根据每波的触发方式决定何时开始生成
+/// 3. 根据阵营和路径ID从LevelPathManager拿到真实路径
+/// 4. 生成单位 → 给UnitMovement赋值路径
 /// </summary>
 public class WaveGenerator : MonoBehaviour
 {
-    // 单例实例，全局唯一，方便外部调用
-    public static WaveGenerator Instance;
+    [Header("默认生成点（波次未单独指定时使用）")]
+    [SerializeField] private Transform defaultSpawnPoint;
 
-    [Header("引用")]
-    private Transform spawnPoint;  // 生成点
-    private WaveList waveList;   // 波次列表配置容器
-    
+    private WaveList waveList;                          // 波次列表配置
+    private List<GameObject>[] waveSpawnedUnits;        // 每波追踪生成的单位，用于 AllUnitsDead 判定
+    private bool[] waveSpawningDone;                    // 每波生成是否完毕
+    private bool isWaitingForContinue;                  // Manual 模式挂起标记
+    private Coroutine waveLoopCoroutine;
 
-    // 脚本初始化时设置单例
-    void Awake()
-    {
-        Instance = this;
-    }
+    /// <summary>是否正在运行波次</summary>
+    public bool IsRunning { get; private set; }
+
+    /// <summary>当前处理到的波次索引（-1 表示未开始）</summary>
+    public int CurrentWaveIndex { get; private set; } = -1;
+
+    /// <summary>全部波次是否已完成</summary>
+    public bool IsAllWavesComplete => !IsRunning && CurrentWaveIndex >= 0;
 
     /// <summary>
     /// 外部调用：开始所有波次
     /// </summary>
-    public void StartWave(Transform spawnPoint, WaveList waveList)
+    /// <param name="defaultSpawn">默认生成点（波次未单独指定时使用）</param>
+    /// <param name="list">波次列表配置</param>
+    public void StartWave(Transform defaultSpawn, WaveList list)
     {
-        this.spawnPoint = spawnPoint;
-        this.waveList = waveList;
-        StartCoroutine(WaveLoop());
+        defaultSpawnPoint = defaultSpawn;
+        waveList = list;
+        IsRunning = true;
+        CurrentWaveIndex = -1;
+        waveLoopCoroutine = StartCoroutine(WaveLoop());
     }
 
     /// <summary>
-    /// 遍历所有波次，逐个执行
+    /// 停止波次生成（会中断所有未开始的波次，已生成的单位不受影响）
+    /// </summary>
+    public void StopWave()
+    {
+        if (waveLoopCoroutine != null)
+            StopCoroutine(waveLoopCoroutine);
+        IsRunning = false;
+    }
+
+    /// <summary>
+    /// 继续下一个 Manual 波次
+    /// </summary>
+    public void Continue()
+    {
+        isWaitingForContinue = false;
+    }
+
+    /// <summary>
+    /// 遍历波次列表，根据触发方式决定开始时机
     /// </summary>
     IEnumerator WaveLoop()
     {
-        // 遍历配置里每一个波次
-        foreach (var wave in waveList.waves)
+        int waveCount = waveList.waves.Length;
+        waveSpawnedUnits = new List<GameObject>[waveCount];
+        waveSpawningDone = new bool[waveCount];
+        for (int i = 0; i < waveCount; i++)
+            waveSpawnedUnits[i] = new List<GameObject>();
+
+        for (int i = 0; i < waveCount; i++)
         {
-            // 等待当前整波生成完毕，再进行下一波
-            yield return StartCoroutine(SpawnOneWave(wave));
-            // 波次之间固定间隔2秒
-            yield return new WaitForSeconds(2f);
+            WaveData wave = waveList.waves[i];
+            CurrentWaveIndex = i;
+
+            switch (wave.triggerType)
+            {
+                case WaveTriggerType.Immediate:
+                    // 立即启动生成协程，不阻塞循环，可与其它波次并发
+                    StartCoroutine(SpawnOneWave(wave, i));
+                    break;
+
+                case WaveTriggerType.Manual:
+                    // 挂起等待外部调用 Continue()
+                    isWaitingForContinue = true;
+                    yield return new WaitWhile(() => isWaitingForContinue);
+                    yield return StartCoroutine(SpawnOneWave(wave, i));
+                    break;
+
+                case WaveTriggerType.AfterPrevious:
+                    // 等所有已启动的波次生成完毕 → 间隔时间 → 开始本波
+                    yield return new WaitWhile(() => AnyPreviousWaveStillSpawning(i));
+                    yield return new WaitForSeconds(wave.nextWaveInterval);
+                    yield return StartCoroutine(SpawnOneWave(wave, i));
+                    break;
+
+                case WaveTriggerType.AllUnitsDead:
+                    // 等场上所有已生成单位全部死亡 → 开始本波
+                    yield return new WaitWhile(() => AnyTrackedUnitStillAlive());
+                    yield return StartCoroutine(SpawnOneWave(wave, i));
+                    break;
+            }
         }
+
+        // 等待剩余的 Immediate 波次全部生成完毕
+        yield return new WaitWhile(() => AnyPreviousWaveStillSpawning(waveCount));
+
+        IsRunning = false;
     }
 
     /// <summary>
     /// 生成单个波次的所有单位
     /// </summary>
-    IEnumerator SpawnOneWave(WaveData wave)
+    /// <param name="wave">波次配置</param>
+    /// <param name="waveIndex">波次索引，用于追踪生成单位</param>
+    IEnumerator SpawnOneWave(WaveData wave, int waveIndex)
     {
-        // 1. 根据波次配置的路径ID，从路径管理器拿到真实路径对象
-        PathManager targetPath = LevelPathManager.Instance.GetPath(wave.camp, wave.pathID);
-        if (targetPath == null) yield break;  // 路径找不到，直接终止本波
+        // 确定生成点：波次自己的 > 默认的
+        Transform spawnAt = wave.spawnPoint != null ? wave.spawnPoint : defaultSpawnPoint;
 
-        // 2. 循环生成当前波次指定数量的单位
+        // 根据配置的路径ID + 阵营 拿到真实路径对象
+        PathManager targetPath = LevelPathManager.Instance.GetPath(waveList.camp, wave.pathID);
+        if (targetPath == null)
+        {
+            waveSpawningDone[waveIndex] = true;
+            yield break;
+        }
+
+        var units = waveSpawnedUnits[waveIndex];
+
         for (int i = 0; i < wave.spawnCount; i++)
         {
             // 在生成点位置生成单位
-            GameObject unit = Instantiate(wave.unitPrefab, spawnPoint.position, Quaternion.identity);
-            
-            // 3. 给单位移动脚本赋值行走路径
+            GameObject unit = Instantiate(wave.unitPrefab, spawnAt.position, Quaternion.identity);
+
+            // 给单位移动脚本赋值行走路径
             UnitMovement move = unit.GetComponent<UnitMovement>();
             if (move != null)
-            {
                 move.SetPath(targetPath);
-            }
-            
-            // 每个单位生成间隔
+
+            // 追踪本波生成的单位（用于 AllUnitsDead 判定）
+            units.Add(unit);
+
+            // 生成间隔
             yield return new WaitForSeconds(wave.spawnInterval);
         }
+
+        waveSpawningDone[waveIndex] = true;
+    }
+
+    /// <summary>
+    /// 检查索引 i 之前是否有波次仍在生成中
+    /// </summary>
+    bool AnyPreviousWaveStillSpawning(int upToIndex)
+    {
+        for (int i = 0; i < upToIndex; i++)
+        {
+            if (!waveSpawningDone[i])
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 检查场上是否还有存活的已生成单位
+    /// （遍历所有已生成完的波次，清理 null 的同时判断是否全死光）
+    /// </summary>
+    bool AnyTrackedUnitStillAlive()
+    {
+        for (int i = 0; i < waveSpawnedUnits.Length; i++)
+        {
+            var units = waveSpawnedUnits[i];
+            // 从后往前遍历，安全清理已销毁的单位
+            for (int j = units.Count - 1; j >= 0; j--)
+            {
+                if (units[j] == null)
+                    units.RemoveAt(j);
+            }
+            // 还有存活单位 → 条件未满足
+            if (units.Count > 0)
+                return true;
+        }
+        return false;
     }
 }
