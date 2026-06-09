@@ -33,21 +33,16 @@ public class Bullet : MonoBehaviour
 
     void HitTarget()
     {
-        UnitAttr targetAttr = target.GetComponent<UnitAttr>();
-        if (targetAttr != null)
+        // ✅ 先打单位（士兵/怪物）
+        if (target.TryGetComponent(out UnitCombat unitCombat))
         {
-            // 完全沿用你原有系统的伤害计算公式
-            float finalDamage;
-            if (attackType == AttackType.Physical)
-            {
-                finalDamage = damage * (100f / (100f + targetAttr.physicalDefense));
-            }
-            else
-            {
-                finalDamage = damage * (100f / (100f + targetAttr.magicDefense));
-            }
-
-            targetAttr.currentHp -= finalDamage;
+            // 调用原有系统的TakeDamage，自动触发：伤害计算、血条刷新、死亡判定
+            unitCombat.TakeDamage(damage, attackType);
+        }
+        // ✅ 再打防御塔（兼容你的防御塔系统）
+        else if (target.TryGetComponent(out TowerBase tower))
+        {
+            tower.TakeDamage(damage, attackType);
         }
 
         // 销毁子弹

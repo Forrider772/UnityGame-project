@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Reflection;
 
 /// <summary>
 /// 法师专属远程战斗模块
@@ -15,36 +14,38 @@ public class MageCombat : MonoBehaviour
 
     private UnitAttr attr;
     private UnitCombat originalCombat;
-    private FieldInfo currentTargetField;
     private float attackTimer;
 
     void Awake()
     {
         attr = GetComponent<UnitAttr>();
         originalCombat = GetComponent<UnitCombat>();
-        
+
+        // ✅ 新增：组件缺失保护，直接禁用脚本不崩溃
+        if (originalCombat == null || attr == null)
+        {
+            Debug.LogError("MageCombat：缺少UnitAttr或UnitCombat组件！", this);
+            enabled = false;
+            return;
+        }
+
         // 冻结原有攻击逻辑
         originalCombat.enabled = false;
-        
-        // 反射获取目标
-        currentTargetField = typeof(UnitCombat).GetField("currentTarget", 
-            BindingFlags.Instance | BindingFlags.NonPublic);
     }
 
     void Update()
     {
-        if (attr.currentHp <= 0) return;
+        // ✅ 新增：死亡/组件缺失直接返回
+        if (attr == null || attr.currentHp <= 0 || originalCombat == null) return;
 
-        Transform currentTarget = (Transform)currentTargetField.GetValue(originalCombat);
-        if (currentTarget != null)
+        // ✅ 彻底删除反射！直接访问public的currentTarget
+        Transform currentTarget = originalCombat.currentTarget;
+        if (currentTarget == null) return;
+
+        attackTimer -= Time.deltaTime;
+        if (attackTimer <= 0 && Vector3.Distance(transform.position, currentTarget.position) <= attr.atkRange)
         {
-            attackTimer -= Time.deltaTime;
-            
-            if (attackTimer <= 0 && 
-                Vector3.Distance(transform.position, currentTarget.position) <= attr.atkRange)
-            {
-                Attack(currentTarget);
-            }
+            Attack(currentTarget);
         }
     }
 
@@ -57,17 +58,23 @@ public class MageCombat : MonoBehaviour
 
     void LaunchFireball()
     {
-        Transform currentTarget = (Transform)currentTargetField.GetValue(originalCombat);
-        if (currentTarget == null) return;
+        Transform currentTarget = originalCombat.currentTarget;
+        // ✅ 新增：目标消失/火球预制体未赋值 直接返回
+        if (currentTarget == null || fireballPrefab == null) return;
 
-        GameObject fireball = Instantiate(fireballPrefab, 
-            transform.position + Vector3.up * spawnHeightOffset, 
-            Quaternion.identity);
+        GameObject fireball = Instantiate(
+            fireballPrefab,
+            transform.position + Vector3.up * spawnHeightOffset,
+            Quaternion.identity
+        );
 
-        Bullet bullet = fireball.GetComponent<Bullet>();
-        bullet.damage = attr.atk;
-        bullet.target = currentTarget;
-        bullet.speed = fireballSpeed;
-        bullet.attackType = AttackType.Magic;
+        // ✅ 新增：Bullet组件空保护
+        if (fireball.TryGetComponent(out Bullet bullet))
+        {
+            bullet.damage = attr.atk;
+            bullet.target = currentTarget;
+            bullet.speed = fireballSpeed;
+            bullet.attackType = AttackType.Magic;
+        }
     }
 }
