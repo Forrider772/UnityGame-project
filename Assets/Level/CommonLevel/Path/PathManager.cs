@@ -149,22 +149,17 @@ public class PathManager : MonoBehaviour
             newPath.camp = camp == CampType.Player ? CampType.Enemy : CampType.Player;
         }
 
-        // 4. 反向路径点
+        // 4. 反向路径点（Instantiate 已重映射 pathPoints 引用，直接反转即可）
         if (reverse)
         {
-            // 收集所有子 Transform（路径点），反转在层级中的顺序
-            List<Transform> children = new();
-            for (int i = 0; i < newGo.transform.childCount; i++)
-                children.Add(newGo.transform.GetChild(i));
+            newPath.pathPoints.Reverse();
 
-            children.Reverse();
-            for (int i = 0; i < children.Count; i++)
-                children[i].SetSiblingIndex(i);
-
-            // 刷新 pathPoints 列表引用
-            newPath.pathPoints = new List<Transform>();
-            for (int i = 0; i < newGo.transform.childCount; i++)
-                newPath.pathPoints.Add(newGo.transform.GetChild(i));
+            // 同步层级顺序
+            for (int i = 0; i < newPath.pathPoints.Count; i++)
+            {
+                if (newPath.pathPoints[i] != null)
+                    newPath.pathPoints[i].SetSiblingIndex(i);
+            }
         }
 
         // 5. 选中新对象
