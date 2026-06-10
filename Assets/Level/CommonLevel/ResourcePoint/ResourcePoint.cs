@@ -7,10 +7,6 @@ using UnityEngine;
 /// </summary>
 public class ResourcePoint : MonoBehaviour
 {
-    [Header("路径绑定")]
-    public PathID pathID;
-    public int pathWaypointIndex;
-
     [Header("驻扎参数")]
     public float garrisonRange = 1.5f;
     public float resourceBonus = 5f;

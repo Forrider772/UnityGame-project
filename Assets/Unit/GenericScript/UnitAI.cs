@@ -107,19 +107,17 @@ public class UnitAI : MonoBehaviour
 
     /// <summary>
     /// 尝试处理驻扎点交互（驻扎或抢占），成功返回 true
+    /// 单位走到哪就检测脚下有没有已进入范围的驻扎点
     /// </summary>
     bool TryHandleGarrisonPoint()
     {
         if (GarrisonPointManager.Instance == null) return false;
 
-        GarrisonPoint gp = GarrisonPointManager.Instance.GetNearestGarrisonPoint(
+        // 检测单位是否已进入某个驻扎点的交互范围（不再找最近，只看是否已进入）
+        GarrisonPoint gp = GarrisonPointManager.Instance.GetGarrisonPointInRange(
             transform.position, attr.camp);
 
         if (gp == null) return false;
-        if (!gp.IsUnitInRange(gameObject)) return false;
-
-        // 检查生效阵营：若该驻扎点对此单位阵营无效，忽略
-        if (!gp.IsEffectiveFor(attr.camp)) return false;
 
         // 可驻扎 → 驻扎
         if (gp.CanGarrison(gameObject))
@@ -140,16 +138,15 @@ public class UnitAI : MonoBehaviour
 
     /// <summary>
     /// 尝试处理资源点交互（驻扎或抢占），成功返回true
+    /// 单位沿路径行走，进入资源点范围即触发交互，不依赖路径系统
     /// </summary>
     bool TryHandleResourcePoint()
     {
-        if (movement.pathManager == null) return false;
         if (ResourcePointManager.Instance == null) return false;
 
-        ResourcePoint rp = ResourcePointManager.Instance.GetResourcePointOnPath(movement.pathManager.pathId);
+        // 单位走到哪就检查是否进入了某个资源点的范围
+        ResourcePoint rp = ResourcePointManager.Instance.GetResourcePointInRange(transform.position);
         if (rp == null) return false;
-        if (!rp.IsUnitInRange(gameObject))
-            return false;
 
         // 情况A/B: 可驻扎 → 驻扎
         if (rp.CanGarrison(gameObject))

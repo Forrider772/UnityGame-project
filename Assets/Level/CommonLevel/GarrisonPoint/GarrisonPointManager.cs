@@ -172,32 +172,24 @@ public class GarrisonPointManager : MonoBehaviour
     // ==================== 查询方法 ====================
 
     /// <summary>
-    /// 获取对指定单位阵营有效的最近驻扎点
+    /// 检测单位是否已进入某个驻扎点的交互范围（不再找最近，只看是否已进入）
     /// </summary>
     /// <param name="position">查询位置（世界坐标）</param>
     /// <param name="unitCamp">单位所属阵营</param>
-    /// <returns>最近的驻扎点，若无则返回 null</returns>
-    public GarrisonPoint GetNearestGarrisonPoint(Vector2 position, CampType unitCamp)
+    /// <returns>范围内第一个匹配的驻扎点，若无则返回 null</returns>
+    public GarrisonPoint GetGarrisonPointInRange(Vector2 position, CampType unitCamp)
     {
-        GarrisonPoint nearest = null;
-        float minDist = float.MaxValue;
-
         foreach (var gp in _allGarrisonPoints)
         {
             if (gp == null) continue;
 
-            // 只返回对该阵营生效的驻扎点
             if (!gp.IsEffectiveFor(unitCamp)) continue;
 
-            float dist = Vector2.Distance(position, gp.worldPosition);
-            if (dist < minDist)
-            {
-                minDist = dist;
-                nearest = gp;
-            }
+            if (Vector2.Distance(position, gp.worldPosition) <= gp.garrisonRange)
+                return gp;
         }
 
-        return nearest;
+        return null;
     }
 
     /// <summary>

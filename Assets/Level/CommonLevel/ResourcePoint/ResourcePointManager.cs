@@ -24,11 +24,21 @@ public class ResourcePointManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 根据路径ID查询资源点（同一条路径双方共用）
+    /// 获取指定位置处的资源点（单位走入范围即触发，不依赖路径系统）
     /// </summary>
-    public ResourcePoint GetResourcePointOnPath(PathID pathId)
+    /// <param name="position">查询位置（世界坐标）</param>
+    /// <returns>范围内第一个匹配的资源点，若无则返回 null</returns>
+    public ResourcePoint GetResourcePointInRange(Vector2 position)
     {
-        return _allResourcePoints.Find(rp => rp.pathID == pathId);
+        foreach (var rp in _allResourcePoints)
+        {
+            if (rp == null) continue;
+
+            if (Vector2.Distance(position, rp.transform.position) <= rp.garrisonRange)
+                return rp;
+        }
+
+        return null;
     }
 
     /// <summary>
