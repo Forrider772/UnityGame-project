@@ -15,7 +15,7 @@ public static class SaveManager
     public static int CurrentSlotIndex;
 
     /// <summary>关卡场景加载顺序，新增关卡只需追加到此数组</summary>
-    private static readonly string[] levelSceneOrder = { "Level_1" };
+    private static readonly string[] levelSceneOrder = { "Level_1", "Level_2" };
 
     /// <summary>根据栏位索引生成存档文件路径</summary>
     private static string GetSlotPath(int slotIndex)
