@@ -74,43 +74,54 @@ public class WaveGenerator : MonoBehaviour
         for (int i = 0; i < waveCount; i++)
             waveSpawnedUnits[i] = new List<GameObject>();
 
-        for (int i = 0; i < waveCount; i++)
+        int index = 0;
+        while (index < waveCount)
         {
-            WaveData wave = waveList.waves[i];
-            CurrentWaveIndex = i;
+            WaveData wave = waveList.waves[index];
+            CurrentWaveIndex = index;
 
+            // 并发波次由前一个非并发波次连带启动；此处只处理列表开头就是并发的情况
+            if (wave.triggerType == WaveTriggerType.Concurrent)
+            {
+                StartCoroutine(SpawnOneWave(wave, index));
+                index++;
+                continue;
+            }
+
+            // 等待触发条件
             switch (wave.triggerType)
             {
-                case WaveTriggerType.Immediate:
-                    // 立即启动生成协程，不阻塞循环，可与其它波次并发
-                    StartCoroutine(SpawnOneWave(wave, i));
-                    break;
-
                 case WaveTriggerType.Manual:
-                    // 挂起等待外部调用 Continue()
                     isWaitingForContinue = true;
                     yield return new WaitWhile(() => isWaitingForContinue);
-                    yield return StartCoroutine(SpawnOneWave(wave, i));
                     break;
-
                 case WaveTriggerType.AfterPrevious:
-                    // 等所有已启动的波次生成完毕 → 间隔时间 → 开始本波
-                    yield return new WaitWhile(() => AnyPreviousWaveStillSpawning(i));
-                    yield return new WaitForSeconds(wave.nextWaveInterval);
-                    yield return StartCoroutine(SpawnOneWave(wave, i));
+                    yield return new WaitWhile(() => AnyPreviousWaveStillSpawning(index));
+                    yield return new WaitForSeconds(wave.delayBeforeStart);
                     break;
-
                 case WaveTriggerType.AllUnitsDead:
-                    // 等场上所有已生成单位全部死亡 → 开始本波
                     yield return new WaitWhile(() => AnyTrackedUnitStillAlive());
-                    yield return StartCoroutine(SpawnOneWave(wave, i));
                     break;
             }
+
+            // 启动当前波次
+            int anchor = index;
+            StartCoroutine(SpawnOneWave(wave, index));
+            index++;
+
+            // 连带启动紧随的连续并发波次
+            while (index < waveCount && waveList.waves[index].triggerType == WaveTriggerType.Concurrent)
+            {
+                CurrentWaveIndex = index;
+                StartCoroutine(SpawnOneWave(waveList.waves[index], index));
+                index++;
+            }
+
+            // 等当前非并发波次出完，再处理下一组
+            yield return new WaitWhile(() => !waveSpawningDone[anchor]);
         }
 
-        // 等待剩余的 Immediate 波次全部生成完毕
         yield return new WaitWhile(() => AnyPreviousWaveStillSpawning(waveCount));
-
         IsRunning = false;
     }
 

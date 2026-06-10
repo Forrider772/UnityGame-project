@@ -5,14 +5,14 @@
 public enum WaveTriggerType
 {
     /// <summary>
-    /// 等上一波完成后 + nextWaveInterval 秒再开始（默认，兼容旧配置）
+    /// 等上一波完成后 + 本波次设置的延迟秒数再开始（默认，兼容旧配置）
     /// </summary>
     AfterPrevious,
 
     /// <summary>
-    /// 遍历到本波时立即开始，不等待上一波，可与上波并发出怪
+    /// 并发模式：遍历到本波时立即开始，不等待上一波，可与上波并发出怪
     /// </summary>
-    Immediate,
+    Concurrent,
 
     /// <summary>
     /// 挂起等待，外部调用 WaveGenerator.Continue() 后立即开始

@@ -21,10 +21,11 @@ public class WaveData
     public float spawnInterval;
 
     [Header("触发方式 — 何时开始出怪")]
-    [Tooltip("本波的触发方式：\n· AfterPrevious：等上一波生成完毕+间隔时间后开始\n· Immediate：遍历到本波时立即开始（可与上波并发）\n· Manual：等待外部调用 Continue() 后开始\n· AllUnitsDead：等场上所有已生成单位全部死亡后开始")]
+    [Tooltip("本波的触发方式：\n· AfterPrevious：等上一波生成完毕 + 本波延迟后开始\n· Concurrent：并发模式，遍历到本波时立即开始（可与上波并发出怪）\n· Manual：等待外部调用 Continue() 后开始\n· AllUnitsDead：等场上所有已生成单位全部死亡后开始")]
     public WaveTriggerType triggerType = WaveTriggerType.AfterPrevious;
 
-    [Tooltip("[仅 AfterPrevious 模式生效] 上一波完成后，等待多少秒再开始本波生成")]
-    public float nextWaveInterval = 2f;
+    [Header("延迟设置")]
+    [Tooltip("[仅 AfterPrevious 模式生效] 本波次延迟多少秒后开始生成")]
+    public float delayBeforeStart = 2f;
 
 }
