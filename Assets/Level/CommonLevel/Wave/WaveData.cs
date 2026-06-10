@@ -3,14 +3,28 @@ using UnityEngine;
 [System.Serializable]
 public class WaveData
 {
-    [Header("生成的阵营")]
-    public CampType camp;
-    [Header("生成的单位")]
+    [Header("生成内容 — 出什么、从哪出、走哪条路")]
+    [Tooltip("要生成的单位预制体")]
     public GameObject unitPrefab;
-    [Header("生成数量")]
-    public int spawnCount;
-    [Header("生成间隔（秒）")]
-    public float spawnInterval;
-    [Header("行走路径ID")]
+
+    [Tooltip("本波单位的出生点（为空则使用 WaveGenerator 上的默认生成点）")]
+    public Transform spawnPoint;
+
+    [Tooltip("单位行走的路线ID，对应场景中 PathManager 的 pathId")]
     public PathID pathID;
+
+    [Header("生成节奏 — 出多少、多快")]
+    [Tooltip("本波总共生成多少个单位")]
+    public int spawnCount;
+
+    [Tooltip("每两个单位之间的生成间隔（秒）")]
+    public float spawnInterval;
+
+    [Header("触发方式 — 何时开始出怪")]
+    [Tooltip("本波的触发方式：\n· AfterPrevious：等上一波生成完毕+间隔时间后开始\n· Immediate：遍历到本波时立即开始（可与上波并发）\n· Manual：等待外部调用 Continue() 后开始\n· AllUnitsDead：等场上所有已生成单位全部死亡后开始")]
+    public WaveTriggerType triggerType = WaveTriggerType.AfterPrevious;
+
+    [Tooltip("[仅 AfterPrevious 模式生效] 上一波完成后，等待多少秒再开始本波生成")]
+    public float nextWaveInterval = 2f;
+
 }

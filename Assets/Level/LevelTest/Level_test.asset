@@ -13,14 +13,19 @@ MonoBehaviour:
   m_Name: Level_test
   m_EditorClassIdentifier: 
   waveListName: 
+  camp: 1
   waves:
-  - camp: 1
-    unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
+  - unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
+    spawnPoint: {fileID: 0}
+    pathID: 0
     spawnCount: 3
     spawnInterval: 2
-    pathID: 0
-  - camp: 1
-    unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
+    triggerType: 0
+    nextWaveInterval: 2
+  - unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
+    spawnPoint: {fileID: 0}
+    pathID: 1
     spawnCount: 2
     spawnInterval: 2
-    pathID: 1
+    triggerType: 0
+    nextWaveInterval: 2

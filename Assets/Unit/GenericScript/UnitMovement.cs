@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// 单位移动模块
 /// 职责：只处理移动相关逻辑
-/// 1. 沿平滑路径自动行走
+/// 1. 沿平滑路径自动行走（支持曲线/直线统一 API）
 /// 2. 向目标点位追击移动
 /// 3. 判断路径是否走完
 /// 不参与索敌、攻击、UI、AI决策
@@ -14,7 +14,8 @@ public class UnitMovement : MonoBehaviour
     public PathManager pathManager; // 所属路径管理器
 
     private UnitAttr attr;         // 自身属性引用
-    private int currentPathIndex;  // 当前行走到的路径点索引
+    private float pathProgress;    // 归一化距离 [0, 1]，沿路径的完成进度
+    private float totalPathLength; // 路径总弧长（缓存，避免每帧计算）
     private bool isStopped;        // 驻扎等情况下暂停移动
 
     /// <summary>
@@ -31,8 +32,8 @@ public class UnitMovement : MonoBehaviour
     public void SetPath(PathManager path)
     {
         pathManager = path;
-        // 重置路径点索引，防止复用残留
-        currentPathIndex = 0;
+        pathProgress = 0f;
+        totalPathLength = path != null ? path.GetTotalArcLength() : 1f;
     }
 
     /// <summary>
@@ -52,30 +53,19 @@ public class UnitMovement : MonoBehaviour
     }
 
     /// <summary>
-    /// 沿预设平滑路径匀速前进（地面单位专用）
+    /// 沿路径匀速前进（支持曲线/直线，统一使用归一化距离）
     /// </summary>
     public void MoveAlongPath()
     {
         if (isStopped) return;
-        // 路径为空 或 已经走到终点，直接返回
-        if (pathManager == null || currentPathIndex >= pathManager.pathPoints.Count)
-            return;
+        if (pathManager == null || pathProgress >= 1f) return;
 
-        // 获取当前目标路径点
-        Transform targetPoint = pathManager.pathPoints[currentPathIndex];
+        // 按弧长参数化推进，保证沿曲线匀速运动
+        pathProgress += (attr.moveSpeed * Time.deltaTime) / totalPathLength;
+        pathProgress = Mathf.Min(pathProgress, 1f);
 
-        // 向路径点匀速移动
-        transform.position = Vector2.MoveTowards(
-            transform.position,
-            targetPoint.position,
-            attr.moveSpeed * Time.deltaTime
-        );
-
-        // 距离足够近，判定到达，切换下一个路径点
-        if (Vector2.Distance(transform.position, targetPoint.position) < 0.1f)
-        {
-            currentPathIndex++;
-        }
+        // 移动到曲线上的位置
+        transform.position = pathManager.GetCurvePoint(pathProgress);
     }
 
     /// <summary>
@@ -85,7 +75,7 @@ public class UnitMovement : MonoBehaviour
     public void MoveToTarget(Vector2 targetPos)
     {
         if (isStopped) return;
-        
+
         transform.position = Vector2.MoveTowards(
             transform.position,
             targetPos,
@@ -94,12 +84,12 @@ public class UnitMovement : MonoBehaviour
     }
 
     /// <summary>
-    /// 飞行单位专用：直线飞向目标点（新增）
+    /// 飞行单位专用：直线飞向目标点
     /// </summary>
     public void FlyToTarget(Vector3 targetPos)
     {
         if (isStopped) return;
-        
+
         Vector3 moveDir = (targetPos - transform.position).normalized;
         transform.Translate(moveDir * attr.moveSpeed * Time.deltaTime, Space.World);
         transform.right = moveDir;
@@ -111,11 +101,11 @@ public class UnitMovement : MonoBehaviour
     /// <returns>true=已走完 false=还在路径中</returns>
     public bool IsPathCompleted()
     {
-        return pathManager == null || currentPathIndex >= pathManager.pathPoints.Count;
+        return pathManager == null || pathProgress >= 1f;
     }
 
     /// <summary>
-    /// 判断飞行单位是否到达目标（新增）
+    /// 判断飞行单位是否到达目标
     /// </summary>
     public bool IsFlyingTargetReached(Vector3 targetPos, float threshold = 0.5f)
     {

@@ -22,14 +22,22 @@ public class ArcherCombat : MonoBehaviour
         attr = GetComponent<UnitAttr>();
         originalCombat = GetComponent<UnitCombat>();
 
+        // ✅ 新增：关键空保护，组件缺失直接禁用脚本不报错
+        if (originalCombat == null || attr == null)
+        {
+            Debug.LogError("ArcherCombat：缺少UnitAttr或UnitCombat组件！", this);
+            enabled = false;
+            return;
+        }
+
         // 关键：冻结原有UnitCombat的攻击，让它永远不会出手
         originalCombat.enabled = false;
     }
 
     void Update()
     {
-        // 死亡则停止所有逻辑
-        if (attr.currentHp <= 0) return;
+        // ✅ 新增：死亡或组件缺失则停止所有逻辑
+        if (attr == null || attr.currentHp <= 0 || originalCombat == null) return;
 
         // 1. 复用原有系统的索敌结果（完全和战士一样的索敌逻辑）
         currentTarget = GetCurrentTarget();
@@ -41,12 +49,12 @@ public class ArcherCombat : MonoBehaviour
         }
     }
 
-    // 反射获取UnitCombat里的私有currentTarget（完全不修改原代码）
+    // ✅ 彻底删除反射！直接访问public的currentTarget（你UnitCombat里已经是public了）
+    // 同时加了100%空保护，再也不会报NullReferenceException
     private Transform GetCurrentTarget()
     {
-        var field = typeof(UnitCombat).GetField("currentTarget", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        return (Transform)field.GetValue(originalCombat);
+        if (originalCombat == null) return null;
+        return originalCombat.currentTarget;
     }
 
     // 射手专属远程攻击
@@ -63,14 +71,24 @@ public class ArcherCombat : MonoBehaviour
         if (attackTimer < attr.atkCD) return;
         attackTimer = 0;
 
+        // ✅ 新增：预制体空保护，没拖子弹也不会报错
+        if (bulletPrefab == null)
+        {
+            Debug.LogWarning("ArcherCombat：未赋值子弹预制体！", this);
+            return;
+        }
+
         // 生成子弹
         GameObject bullet = Instantiate(bulletPrefab, transform.position, Quaternion.identity);
-        Bullet bulletScript = bullet.GetComponent<Bullet>();
-
-        // 传递伤害参数
-        bulletScript.damage = attr.atk;
-        bulletScript.target = currentTarget;
-        bulletScript.speed = bulletSpeed;
-        bulletScript.attackType = attr.attackType;
+        
+        // ✅ 新增：Bullet组件空保护
+        if (bullet.TryGetComponent(out Bullet bulletScript))
+        {
+            // 传递伤害参数
+            bulletScript.damage = attr.atk;
+            bulletScript.target = currentTarget;
+            bulletScript.speed = bulletSpeed;
+            bulletScript.attackType = attr.attackType;
+        }
     }
 }

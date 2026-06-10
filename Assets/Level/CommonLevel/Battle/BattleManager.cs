@@ -10,6 +10,9 @@ public class BattleManager : MonoBehaviour
 {
     public static BattleManager Instance;
 
+    [Header("波次生成器")]
+    public WaveGenerator waveGenerator;
+
     [Header("绑定的关卡配置数据")]
     public WaveList waveList;
 
@@ -47,7 +50,7 @@ public class BattleManager : MonoBehaviour
     void Start()
     {
         // 启动波次出怪
-        WaveGenerator.Instance.StartWave(enemyTower.transform, waveList);
+        waveGenerator.StartWave(enemyTower.transform, waveList);
 
         // 初始化胜利面板按钮及隐藏
         if (winPanel != null)
