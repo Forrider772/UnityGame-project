@@ -474,8 +474,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99985913bc2cd5d49add88fc4456dd9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pathID: 0
-  pathWaypointIndex: 0
   garrisonRange: 1.5
   resourceBonus: 5
   maxGarrison: 3
@@ -1824,6 +1822,99 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 793074735}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1975470336
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1975470338}
+  - component: {fileID: 1975470337}
+  m_Layer: 0
+  m_Name: LevelSetup
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1975470337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1975470336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c87f01bb8377e144c810a06ff100893d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  levelName: 
+  levelIndex: 0
+  levelDescription: 
+  overrideBattleConfig: 0
+  maxCost: 10
+  costAddSpeed: 1
+  startingCost: 3
+  overrideWaveConfig: 0
+  waveList: {fileID: 0}
+  overrideTowerConfig: 0
+  playerTower: {fileID: 0}
+  enemyTower: {fileID: 0}
+  overridePlayerTowerProps: 0
+  playerTowerOverride:
+    overrideHp: 0
+    hp: 800
+    overrideAtk: 0
+    atk: 12
+    overrideAtkRange: 0
+    atkRange: 3.5
+    overrideAtkCD: 0
+    atkCD: 1.2
+    overridePhysicalDefense: 0
+    physicalDefense: 0
+    overrideMagicDefense: 0
+    magicDefense: 0
+  overrideEnemyTowerProps: 0
+  enemyTowerOverride:
+    overrideHp: 0
+    hp: 800
+    overrideAtk: 0
+    atk: 12
+    overrideAtkRange: 0
+    atkRange: 3.5
+    overrideAtkCD: 0
+    atkCD: 1.2
+    overridePhysicalDefense: 0
+    physicalDefense: 0
+    overrideMagicDefense: 0
+    magicDefense: 0
+  overrideDeckConfig: 0
+  availableCards: []
+  overrideResourcePointConfig: 0
+  resourcePointMaxGarrison: 3
+  resourcePointRange: 1.5
+  resourcePointBonus: 5
+  overrideGarrisonConfig: 0
+  garrisonPointMaxGarrison: 3
+  garrisonPointRange: 1.5
+--- !u!4 &1975470338
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1975470336}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.16662227, y: 0.08766514, z: -9.979401}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2008033061
 GameObject:
@@ -6115,6 +6206,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   garrisonPointPrefab: {fileID: 4405011921408526384, guid: fc20807b0796c064eb3e3be03812466a, type: 3}
   snapMaxDistance: 2
+  defaultMaxGarrison: 3
+  defaultGarrisonRange: 1.5
 --- !u!1 &8571897042588966716
 GameObject:
   m_ObjectHideFlags: 0
@@ -6459,3 +6552,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 1180399741471433968}
   - {fileID: 2141863719}
+  - {fileID: 1975470338}
