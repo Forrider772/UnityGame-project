@@ -54,15 +54,28 @@ public class UnitMovement : MonoBehaviour
 
     /// <summary>
     /// 沿路径匀速前进（支持曲线/直线，统一使用归一化距离）
+    /// 循环模式：到达终点后自动回到起点继续前进
     /// </summary>
     public void MoveAlongPath()
     {
         if (isStopped) return;
-        if (pathManager == null || pathProgress >= 1f) return;
+        if (pathManager == null) return;
+
+        // 非循环模式：路径已走完则停止
+        if (!pathManager.isLooping && pathProgress >= 1f) return;
 
         // 按弧长参数化推进，保证沿曲线匀速运动
         pathProgress += (attr.moveSpeed * Time.deltaTime) / totalPathLength;
-        pathProgress = Mathf.Min(pathProgress, 1f);
+
+        // 循环模式：模运算回到起点继续前进
+        if (pathManager.isLooping)
+        {
+            pathProgress %= 1.0f;
+        }
+        else
+        {
+            pathProgress = Mathf.Min(pathProgress, 1f);
+        }
 
         // 移动到曲线上的位置
         transform.position = pathManager.GetCurvePoint(pathProgress);
@@ -97,11 +110,14 @@ public class UnitMovement : MonoBehaviour
 
     /// <summary>
     /// 判断是否已经走完整条路径
+    /// 循环路径永远不会"走完"，始终返回 false
     /// </summary>
     /// <returns>true=已走完 false=还在路径中</returns>
     public bool IsPathCompleted()
     {
-        return pathManager == null || pathProgress >= 1f;
+        if (pathManager == null) return true;
+        if (pathManager.isLooping) return false;
+        return pathProgress >= 1f;
     }
 
     /// <summary>
