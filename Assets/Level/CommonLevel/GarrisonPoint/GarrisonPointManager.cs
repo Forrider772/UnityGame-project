@@ -18,6 +18,13 @@ public class GarrisonPointManager : MonoBehaviour
     [Tooltip("创建驻扎点时，鼠标位置距离最近路径超过此值则不吸附（返回null）")]
     public float snapMaxDistance = 2f;
 
+    [Header("默认驻扎点属性")]
+    [Tooltip("动态创建的驻扎点默认驻扎上限")]
+    public int defaultMaxGarrison = 3;
+
+    [Tooltip("动态创建的驻扎点默认交互范围")]
+    public float defaultGarrisonRange = 1.5f;
+
     private List<GarrisonPoint> _allGarrisonPoints = new List<GarrisonPoint>();
 
     void Awake()
@@ -151,6 +158,8 @@ public class GarrisonPointManager : MonoBehaviour
         gp.boundSegmentIndex = segIndex;
         gp.boundSegmentT = segT;
         gp.effectiveCamps = new List<CampType>(effectiveCamps);
+        gp.maxGarrison = defaultMaxGarrison;
+        gp.garrisonRange = defaultGarrisonRange;
 
         go.transform.position = snapPos;
 
