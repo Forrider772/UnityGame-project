@@ -16,6 +16,8 @@ public partial class PathManager : MonoBehaviour
     public CampType camp;
     [Tooltip("路线唯一标识ID，用于区分不同路线")]
     public PathID pathId;
+    [Tooltip("路径移动类型，控制哪种单位类型可使用此路径")]
+    public PathMoveType moveType = PathMoveType.Ground;
 
     [Header("路径节点列表")]
     [Tooltip("按顺序排列的路径点Transform（空物体），定义了路线的形状")]

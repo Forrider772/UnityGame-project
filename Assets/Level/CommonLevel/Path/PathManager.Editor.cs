@@ -264,7 +264,7 @@ public partial class PathManager
         UnityEditor.Handles.color = selectedColor;
         UnityEditor.Handles.Label(
             pathPoints[0].position + Vector3.up * 0.5f,
-            $"[{camp}] {pathId}",
+            $"[{camp}] {pathId} ({moveType})",
             new GUIStyle()
             {
                 normal = new GUIStyleState { textColor = selectedColor },

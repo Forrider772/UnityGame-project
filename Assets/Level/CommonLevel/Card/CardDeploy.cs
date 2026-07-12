@@ -152,6 +152,22 @@ public class CardDeploy : MonoBehaviour
     }
 
     /// <summary>
+    /// 从卡牌预制体读取单位移动类型
+    /// 从 unitPrefab 的 UnitAttr 组件获取 unitType，读取失败则默认返回 Ground
+    /// </summary>
+    /// <param name="card">卡牌数据</param>
+    /// <returns>单位移动类型</returns>
+    private UnitType GetUnitTypeFromCard(CardData card)
+    {
+        if (card == null || card.unitPrefab == null) return UnitType.Ground;
+
+        UnitAttr attr = card.unitPrefab.GetComponent<UnitAttr>();
+        if (attr == null) return UnitType.Ground;
+
+        return attr.unitType;
+    }
+
+    /// <summary>
     /// 在指定路线的起点部署单位
     /// 流程：扣费 → 实例化单位 → 设置路径 → 触发卡牌冷却 → 退出部署模式并清空选中状态
     /// </summary>
@@ -159,6 +175,18 @@ public class CardDeploy : MonoBehaviour
     private void DeployUnit(PathManager targetPath)
     {
         if (selectedCard == null || targetPath == null) return;
+
+        // 0. 校验单位类型与路径移动类型是否兼容
+        UnitType unitType = GetUnitTypeFromCard(selectedCard);
+        if (!PathMoveTypeHelper.IsPathCompatible(targetPath.moveType, unitType))
+        {
+            Debug.LogWarning(
+                $"无法部署！单位 [{selectedCard.cardName}] 类型为 {unitType}，" +
+                $"路径 [{targetPath.pathId}] 类型为 {targetPath.moveType}，类型不兼容");
+            ExitDeployMode();
+            CardManager.Instance.DeselectCurrentCard();
+            return;
+        }
 
         // 1. 扣费，若费用不足则提示并返回（不退出部署模式）
         if (!BattleManager.Instance.UseCost(selectedCard.cost))
