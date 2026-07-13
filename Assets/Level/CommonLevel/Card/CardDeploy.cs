@@ -200,9 +200,9 @@ public class CardDeploy : MonoBehaviour
         GameObject unit = Instantiate(selectedCard.unitPrefab, spawnPos, Quaternion.identity);
 
         // 3. 为单位的移动组件设置路径
-        UnitMovement move = unit.GetComponent<UnitMovement>();
-        if (move != null)
-            move.SetPath(targetPath);
+        UnitBrain brain = unit.GetComponent<UnitBrain>();
+        if (brain != null)
+            brain.SetPath(targetPath);
 
         // 4. 启动当前卡牌的冷却（如果有）
         if (CardManager.Instance.CurrentSelected != null)

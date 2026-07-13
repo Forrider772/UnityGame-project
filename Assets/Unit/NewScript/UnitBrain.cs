@@ -1,0 +1,271 @@
+using UnityEngine;
+
+/// <summary>
+/// 单位大脑 —— 纯状态机调度器
+/// 职责：只做行为调度和状态切换，不包含任何具体的移动/战斗逻辑
+/// 通过 GetComponent&lt;IMoveStrategy&gt;() 和 GetComponent&lt;ICombatStrategy&gt;() 注入策略
+///
+/// 行为优先级：
+///   1. 死亡判定
+///   2. 驻扎中检测敌人 → 脱离驻扎进入战斗
+///   3. 按状态执行：Moving / Fighting / Garrisoned / AttackingTower
+/// </summary>
+[RequireComponent(typeof(UnitAttr))]
+[RequireComponent(typeof(UnitUI))]
+public class UnitBrain : MonoBehaviour
+{
+    [Header("调试")]
+    public UnitState state = UnitState.Moving;
+
+    private UnitAttr attr;
+    private UnitUI ui;
+    private IMoveStrategy moveStrategy;
+    private ICombatStrategy combatStrategy;
+
+    void Awake()
+    {
+        attr = GetComponent<UnitAttr>();
+        ui = GetComponent<UnitUI>();
+        moveStrategy = GetComponent<IMoveStrategy>();
+        combatStrategy = GetComponent<ICombatStrategy>();
+
+        if (moveStrategy == null)
+            Debug.LogError($"UnitBrain: {gameObject.name} 缺少 IMoveStrategy 组件！", this);
+        if (combatStrategy == null)
+            Debug.LogError($"UnitBrain: {gameObject.name} 缺少 ICombatStrategy 组件！", this);
+
+        attr.currentHp = attr.maxHp;
+    }
+
+    void Start()
+    {
+        // UnitUI 在 Start 中初始化血条（需要 battleCanvas），UnitBrain 不干预
+    }
+
+    void Update()
+    {
+        // 终端状态不执行任何逻辑
+        if (state == UnitState.Dead) return;
+
+        // 死亡判定
+        if (attr.currentHp <= 0)
+        {
+            Die();
+            return;
+        }
+
+        // ====== 驻扎中：检测敌人 → 立刻离开驻扎投入战斗 ======
+        if (state == UnitState.Garrisoned)
+        {
+            if (combatStrategy != null)
+            {
+                Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
+                if (enemy != null)
+                {
+                    LeaveGarrison();
+                    state = UnitState.Fighting;
+                }
+            }
+            // 驻扎中不执行其他逻辑
+            return;
+        }
+
+        // ====== 状态机主循环 ======
+        if (combatStrategy == null || moveStrategy == null) return;
+
+        switch (state)
+        {
+            case UnitState.Moving:
+                UpdateMoving();
+                break;
+
+            case UnitState.Fighting:
+                UpdateFighting();
+                break;
+
+            case UnitState.AttackingTower:
+                UpdateAttackingTower();
+                break;
+
+            case UnitState.Garrisoned:
+                break;
+        }
+    }
+
+    // ==================== 状态更新方法 ====================
+
+    /// <summary>
+    /// Moving 状态：沿路径行走，检测敌人/驻扎点
+    /// </summary>
+    void UpdateMoving()
+    {
+        // 优先检测敌人
+        Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
+        if (enemy != null)
+        {
+            state = UnitState.Fighting;
+            return;
+        }
+
+        // 检测驻扎点/资源点
+        if (TryGarrisonInteraction()) return;
+
+        // 路径未走完 → 继续移动
+        if (!moveStrategy.IsPathCompleted())
+        {
+            moveStrategy.Move(Time.deltaTime, attr.moveSpeed);
+            return;
+        }
+
+        // 路径已走完 → 锁定塔
+        combatStrategy.SetTowerTarget(attr);
+        if (combatStrategy.CurrentTarget != null)
+            state = UnitState.AttackingTower;
+        // 塔已不存在则留在 Moving，不切换（安全空转）
+    }
+
+    /// <summary>
+    /// Fighting 状态：与敌方单位交战
+    /// </summary>
+    void UpdateFighting()
+    {
+        Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
+        if (enemy == null)
+        {
+            // 敌人消失（被击杀或移出范围）→ 回到移动
+            state = UnitState.Moving;
+            return;
+        }
+
+        combatStrategy.TryExecute(enemy, Time.deltaTime, attr, transform.position, moveStrategy);
+    }
+
+    /// <summary>
+    /// AttackingTower 状态：攻击敌方防御塔
+    /// </summary>
+    void UpdateAttackingTower()
+    {
+        if (combatStrategy.CurrentTarget == null)
+        {
+            // 塔已被摧毁 → 回到 Moving（路径已走完，会再次尝试 SetTowerTarget）
+            state = UnitState.Moving;
+            return;
+        }
+
+        combatStrategy.TryExecute(combatStrategy.CurrentTarget,
+            Time.deltaTime, attr, transform.position, moveStrategy);
+    }
+
+    // ==================== 驻扎交互 ====================
+
+    /// <summary>
+    /// 检测是否进入驻扎点/资源点范围，成功交互返回 true
+    /// 逻辑与原 UnitAI.TryHandleGarrisonPoint / TryHandleResourcePoint 完全一致
+    /// </summary>
+    bool TryGarrisonInteraction()
+    {
+        // 驻扎点检测
+        if (GarrisonPointManager.Instance != null)
+        {
+            GarrisonPoint gp = GarrisonPointManager.Instance.GetGarrisonPointInRange(
+                transform.position, attr.camp);
+            if (gp != null)
+            {
+                if (gp.CanGarrison(gameObject))
+                {
+                    gp.AddGarrison(gameObject);
+                    return true;
+                }
+                if (gp.occupyingCamp != null && gp.occupyingCamp != attr.camp && !gp.isContested)
+                {
+                    gp.StartContest(gameObject);
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        // 资源点检测
+        if (ResourcePointManager.Instance != null)
+        {
+            ResourcePoint rp = ResourcePointManager.Instance.GetResourcePointInRange(transform.position);
+            if (rp != null)
+            {
+                if (rp.CanGarrison(gameObject))
+                {
+                    rp.AddGarrison(gameObject);
+                    return true;
+                }
+                if (rp.occupyingCamp != null && rp.occupyingCamp != attr.camp && !rp.isContested)
+                {
+                    rp.StartContest(gameObject);
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 脱离驻扎（发现敌人时自动调用）
+    /// </summary>
+    void LeaveGarrison()
+    {
+        if (!attr.isGarrisoned) return;
+
+        if (attr.garrisonedPoint != null)
+            attr.garrisonedPoint.RemoveGarrison(gameObject);
+        else if (attr.garrisonedGarrisonPoint != null)
+            attr.garrisonedGarrisonPoint.RemoveGarrison(gameObject);
+
+        moveStrategy?.Resume();
+    }
+
+    // ==================== 外部公共 API ====================
+
+    /// <summary>
+    /// 受到伤害（供 TowerBase / Bullet / 其他单位调用）
+    /// 委托给 CombatStrategy 处理防御减伤和扣血
+    /// </summary>
+    public void TakeDamage(float damage, AttackType type)
+    {
+        if (combatStrategy == null) return;
+        combatStrategy.TakeDamage(damage, type, attr, Die);
+        ui.RefreshHp(attr.currentHp);
+    }
+
+    /// <summary>
+    /// 设置移动路径（供 WaveGenerator / CardDeploy 调用）
+    /// </summary>
+    public void SetPath(PathManager path)
+    {
+        moveStrategy?.SetPath(path);
+    }
+
+    /// <summary>
+    /// 暂停移动（供 ResourcePoint / GarrisonPoint 调用）
+    /// </summary>
+    public void StopMovement()
+    {
+        moveStrategy?.Stop();
+    }
+
+    /// <summary>
+    /// 恢复移动（供 ResourcePoint / GarrisonPoint 调用）
+    /// </summary>
+    public void ResumeMovement()
+    {
+        moveStrategy?.Resume();
+    }
+
+    // ==================== 内部方法 ====================
+
+    void Die()
+    {
+        state = UnitState.Dead;
+        ui.DestroyHpBar();
+        Destroy(gameObject);
+    }
+}

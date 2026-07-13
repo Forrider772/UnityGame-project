@@ -88,9 +88,9 @@ public class GarrisonPoint : MonoBehaviour
                 attr.isGarrisoned = false;
                 attr.garrisonedGarrisonPoint = null;
             }
-            UnitMovement movement = unit.GetComponent<UnitMovement>();
-            if (movement != null)
-                movement.ResumeMovement();
+            UnitBrain brain = unit.GetComponent<UnitBrain>();
+            if (brain != null)
+                brain.ResumeMovement();
         }
         _garrisonedUnits.Clear();
     }
@@ -151,9 +151,9 @@ public class GarrisonPoint : MonoBehaviour
         attr.isGarrisoned = true;
         attr.garrisonedGarrisonPoint = this;
 
-        UnitMovement movement = unit.GetComponent<UnitMovement>();
-        if (movement != null)
-            movement.StopMovement();
+        UnitBrain brain = unit.GetComponent<UnitBrain>();
+        if (brain != null)
+            brain.StopMovement();
 
         if (_occupyingCamp == null)
             _occupyingCamp = attr.camp;
@@ -197,9 +197,9 @@ public class GarrisonPoint : MonoBehaviour
                 attr.isGarrisoned = false;
                 attr.garrisonedGarrisonPoint = null;
             }
-            UnitMovement movement = defender.GetComponent<UnitMovement>();
-            if (movement != null)
-                movement.ResumeMovement();
+            UnitBrain brain = defender.GetComponent<UnitBrain>();
+            if (brain != null)
+                brain.ResumeMovement();
         }
     }
 
@@ -263,9 +263,9 @@ public class GarrisonPoint : MonoBehaviour
             attr.isGarrisoned = true;
             attr.garrisonedGarrisonPoint = this;
 
-            UnitMovement movement = hit.GetComponent<UnitMovement>();
-            if (movement != null)
-                movement.StopMovement();
+            UnitBrain brain = hit.GetComponent<UnitBrain>();
+            if (brain != null)
+                brain.StopMovement();
             added++;
         }
     }
@@ -287,9 +287,9 @@ public class GarrisonPoint : MonoBehaviour
             attr.isGarrisoned = true;
             attr.garrisonedGarrisonPoint = this;
 
-            UnitMovement movement = unit.GetComponent<UnitMovement>();
-            if (movement != null)
-                movement.StopMovement();
+            UnitBrain brain = unit.GetComponent<UnitBrain>();
+            if (brain != null)
+                brain.StopMovement();
             added++;
         }
 

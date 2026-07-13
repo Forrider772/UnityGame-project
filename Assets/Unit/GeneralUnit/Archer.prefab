@@ -12,11 +12,10 @@ GameObject:
   - component: {fileID: 7118627389366059488}
   - component: {fileID: 6272703457052068143}
   - component: {fileID: 7710187593837134469}
-  - component: {fileID: 330323810415328444}
-  - component: {fileID: 1120568360470067073}
   - component: {fileID: -7181395724997178257}
-  - component: {fileID: -3195622778423699877}
-  - component: {fileID: 1909559162770530530}
+  - component: {fileID: 9099741942480434413}
+  - component: {fileID: 1846981284450208948}
+  - component: {fileID: 9131922357662940070}
   m_Layer: 10
   m_Name: Archer
   m_TagString: Untagged
@@ -165,32 +164,6 @@ MonoBehaviour:
   isGarrisoned: 0
   garrisonedPoint: {fileID: 0}
   garrisonedGarrisonPoint: {fileID: 0}
---- !u!114 &330323810415328444
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6656251850606900385}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b1f58364e1c594e4e870641df31b12f2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pathManager: {fileID: 0}
---- !u!114 &1120568360470067073
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6656251850606900385}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 26d8a02bc9b95bf4590ead200f9f7ecb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  enemyBasePosition: {x: 0, y: 0, z: 0}
 --- !u!114 &-7181395724997178257
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -203,7 +176,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22821be36a350384ab68be8c6d37b64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &-3195622778423699877
+--- !u!114 &9099741942480434413
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -212,21 +185,34 @@ MonoBehaviour:
   m_GameObject: {fileID: 6656251850606900385}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: beafbf9acb8e6d841b594530a46282c7, type: 3}
+  m_Script: {fileID: 11500000, guid: 726e5b6cc51c17b49959ef193a3f1805, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  state: 0
+--- !u!114 &1846981284450208948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6656251850606900385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f1f0e64c4a40dd4e8233df7bc485f4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &9131922357662940070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6656251850606900385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf177fa9ff953304cb4e72cbbc57b674, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   bulletPrefab: {fileID: 3216188341073027422, guid: 946337dd762611744b0db16a6561ba12, type: 3}
   bulletSpeed: 8
---- !u!114 &1909559162770530530
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6656251850606900385}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cdbc4171070ca8d4991224b9bcc5b968, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  currentTarget: {fileID: 0}
+  spawnHeightOffset: 0

@@ -151,9 +151,9 @@ public class WaveGenerator : MonoBehaviour
             GameObject unit = Instantiate(wave.unitPrefab, spawnAt.position, Quaternion.identity);
 
             // 给单位移动脚本赋值行走路径
-            UnitMovement move = unit.GetComponent<UnitMovement>();
-            if (move != null)
-                move.SetPath(targetPath);
+            UnitBrain brain = unit.GetComponent<UnitBrain>();
+            if (brain != null)
+                brain.SetPath(targetPath);
 
             // 追踪本波生成的单位（用于 AllUnitsDead 判定）
             units.Add(unit);

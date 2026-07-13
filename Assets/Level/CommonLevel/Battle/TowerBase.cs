@@ -90,8 +90,8 @@ public class TowerBase : MonoBehaviour
         if (atkTimer >= atkCD)
         {
             // 对目标单位造成伤害
-            if (curTarget.TryGetComponent(out UnitCombat unit))
-    unit.TakeDamage(atk, AttackType.Physical);
+            if (curTarget.TryGetComponent(out UnitBrain unit))
+                unit.TakeDamage(atk, AttackType.Physical);
 
             // 重置计时器
             atkTimer = 0;
