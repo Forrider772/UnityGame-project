@@ -17,11 +17,11 @@
 
 ## 2. 项目结构
 
-```
+```json
 Assets/
 ├── ArtResources/              # 美术资源
 │   ├── Fonts/                # 字体文件
-│   └── Deprecated/           # 弃用脚本
+│   └── Deprecated/           # 弃用资源
 ├── Dialogue/                 # 对话模块
 │   ├── DialogueAsset.cs      # 对话数据资产
 │   ├── DialogueManager.cs    # 对话管理器
@@ -41,12 +41,18 @@ Assets/
 │       │   ├── CardManager.cs
 │       │   └── PlayerDeck.cs
 │       ├── Helper/           # 工具类
-│       │   └── Math2DHelper.cs
+│       │   ├── CatmullRomMath.cs
+│       │   ├── Math2DHelper.cs
+│       │   └── PathMath.cs
 │       ├── Path/             # 路径系统
 │       │   ├── LevelPathManager.cs
 │       │   ├── PathID.cs
 │       │   ├── PathManager.cs
+│       │   ├── PathMoveType.cs     # 路径移动类型 + 兼容性校验
 │       │   └── PathVisualManager.cs
+│       ├── ResourcePoint/    # 资源点系统
+│       │   ├── ResourcePoint.cs
+│       │   └── ResourcePointManager.cs
 │       ├── GarrisonPoint/    # 驻扎点系统
 │       │   ├── GarrisonPoint.cs
 │       │   ├── GarrisonPointManager.cs
@@ -55,16 +61,20 @@ Assets/
 │       │   ├── GamePauseManager.cs
 │       │   ├── GameSettingsManager.cs
 │       │   └── HPBar.cs
+│       ├── LevelSetup/       # 关卡配置入口
+│       │   └── LevelSetup.cs
 │       └── Wave/             # 波次系统
 │           ├── WaveData.cs
 │           ├── WaveGenerator.cs
-│           └── WaveList.cs
+│           ├── WaveList.cs
+│           └── WaveTriggerType.cs
 ├── Menu/                     # 主菜单模块
 │   ├── MenuManager.cs        # 菜单核心逻辑
 │   ├── MenuSettingsManager.cs # 菜单设置管理
 │   └── SaveSlotPanel.cs      # 存档栏位选择面板
 ├── Save/                     # 存档模块
 │   ├── GameSaveData.cs       # 存档数据结构
+│   ├── LevelRecord.cs        # 关卡记录
 │   └── SaveManager.cs        # 存档管理器（静态类）
 ├── Scenes/                   # 场景
 │   ├── MenuScene.unity       # 主菜单场景
@@ -73,13 +83,36 @@ Assets/
 │   └── GameStart/
 │       └── UiStart.cs
 ├── TextMesh Pro/             # TextMeshPro插件
-└── Unit/                     # 单位系统
-    └── GenericScript/
-        ├── UnitAI.cs
-        ├── UnitAttr.cs
-        ├── UnitCombat.cs
-        ├── UnitMovement.cs
-        └── UnitUI.cs
+├── Unit/                     # 单位系统
+│   ├── GenericScript/        # 保留不变的组件
+│   │   ├── UnitAttr.cs       # 单位属性数据
+│   │   ├── UnitUI.cs         # 血条UI
+│   │   └── FloatNumber.cs    # 浮动数字
+│   ├── NewScript/            # v2 新架构（策略组件模式）
+│   │   ├── UnitBrain.cs      # 状态机调度器
+│   │   ├── UnitState.cs      # 状态枚举
+│   │   ├── IMoveStrategy.cs  # 移动策略接口
+│   │   ├── ICombatStrategy.cs # 战斗策略接口
+│   │   ├── Bullet.cs         # 投射物（更新版）
+│   │   ├── Movement/
+│   │   │   ├── GroundMoveStrategy.cs   # 地面路径移动
+│   │   │   └── FlightMoveStrategy.cs   # 飞行路径移动
+│   │   └── Combat/
+│   │       ├── MeleeCombatStrategy.cs  # 近战策略
+│   │       ├── RangedCombatStrategy.cs # 远程射击策略
+│   │       └── HealerCombatStrategy.cs # 治疗策略
+│   └── Editor/
+│       └── UnitPrefabMigrator.cs  # 预制体一键迁移工具
+└── Deprecated/               # 弃用代码
+    ├── UnitAI.cs             # 旧AI决策组件
+    ├── UnitCombat.cs         # 旧战斗组件
+    ├── UnitMovement.cs       # 旧移动组件
+    ├── ArcherCombat.cs       # 旧射手特殊战斗
+    ├── MageCombat.cs         # 旧法师特殊战斗
+    ├── HealerCombat.cs       # 旧治疗特殊战斗
+    ├── CardDeployManager.cs
+    ├── CardItemUI.cs
+    └── UnitBase.cs
 ```
 
 ---
@@ -96,6 +129,9 @@ Assets/
 | [CardManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardManager.cs) | 卡牌UI生成、选中管理 | Card/CardManager.cs |
 | [LevelPathManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/LevelPathManager.cs) | 场景路径收集与查询 | Path/LevelPathManager.cs |
 | [WaveGenerator](file:///d:/project/My%20project/Assets/Level/CommonLevel/Wave/WaveGenerator.cs) | 波次生成与单位生成 | Wave/WaveGenerator.cs |
+| [ResourcePointManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/ResourcePoint/ResourcePointManager.cs) | 资源点注册与费用增益计算 | ResourcePoint/ResourcePointManager.cs |
+| [GarrisonPointManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/GarrisonPoint/GarrisonPointManager.cs) | 驻扎点创建与查询 | GarrisonPoint/GarrisonPointManager.cs |
+| [DialogueManager](file:///d:/project/My%20project/Assets/Dialogue/DialogueManager.cs) | 对话播放（跨场景持久化） | Dialogue/DialogueManager.cs |
 
 ### 3.2 静态管理器
 
@@ -114,6 +150,8 @@ BattleManager (核心控制)
     │   └── CardDeploy (卡牌部署)
     │       └── LevelPathManager
     ├── TowerBase (双塔攻防)
+    ├── ResourcePointManager (资源点管理)
+    │   └── ResourcePoint (单个资源点)
     ├── GarrisonPointManager (驻扎点管理)
     │   └── GarrisonPointPlacer (驻扎点放置)
     └── SaveManager (胜利时自动存档)
@@ -124,11 +162,16 @@ MenuManager (菜单控制)
     ├── MenuSettingsManager (设置面板)
     └── GameSettingsManager (关卡内设置)
 
-单位系统:
-    UnitAttr (属性)
-    ├── UnitMovement (移动)
-    ├── UnitCombat (战斗)
-    └── UnitAI (AI决策)
+单位系统 (v2 策略组件模式):
+    UnitAttr (属性数据)
+    UnitBrain (状态机调度器)
+    ├── IMoveStrategy (移动策略)
+    │   ├── GroundMoveStrategy (地面沿路径)
+    │   └── FlightMoveStrategy (飞行沿路径)
+    └── ICombatStrategy (战斗策略)
+        ├── MeleeCombatStrategy (近战)
+        ├── RangedCombatStrategy (远程投射)
+        └── HealerCombatStrategy (治疗)
 ```
 
 ---
@@ -392,50 +435,178 @@ Dictionary<CampType, Dictionary<PathID, PathManager>> campPathDict
 
 ---
 
-### 4.5 单位系统 (Unit)
+### 4.5 单位系统 (Unit) — v2 策略组件模式
 
-#### 4.5.1 UnitAttr
+> 单位系统 v1 的 `UnitAI`/`UnitCombat`/`UnitMovement`/`ArcherCombat`/`MageCombat`/`HealerCombat` 已废弃，移入 `Assets/Deprecated/`。
+> 新架构采用 **策略组件模式**：`UnitBrain`（状态机） + `IMoveStrategy`（移动策略） + `ICombatStrategy`（战斗策略）。
 
-**职责：** 纯数据存储容器，不处理逻辑
+#### 4.5.1 架构概览
 
-**核心属性：**
+每个单位预制体由 **5 个 MonoBehaviour** 组合：
 
-```csharp
-public CampType camp;                // 所属阵营
-public float maxHp = 120f;          // 最大生命
-public float atk = 8f;              // 攻击力
-public float moveSpeed = 1.8f;      // 移动速度
-public float atkRange = 1.2f;       // 攻击范围
-public float atkCD = 1f;            // 攻击冷却
-public float detectRange = 3f;      // 索敌范围
-public AttackType attackType;       // 攻击类型
-public float physicalDefense;       // 物理防御
-public float magicDefense;          // 法术防御
+`UnitAttr → UnitUI → UnitBrain → [IMoveStrategy] → [ICombatStrategy]`
+
+```
+                    ┌─────────────┐
+                    │  UnitBrain  │  纯状态机调度器
+                    │  (状态机)    │  不包含任何具体逻辑
+                    └──┬───────┬──┘
+                       │       │
+              ┌────────▼─┐  ┌──▼──────────┐
+              │IMoveStrategy│ │ICombatStrategy│
+              │ SetPath()  │  │ DetectTarget()│
+              │ Move()     │  │ TryExecute()  │
+              │ Stop/Resume│  │ SetTowerTarget│
+              │ MoveToward()│ │ TakeDamage() │
+              └──┬─────────┘ └──┬───────────┘
+                 │              │
+    ┌────────────▼──┐  ┌───────┴──────────┐
+    │GroundMoveStrat │  │MeleeCombatStrat  │
+    │FlightMoveStrat │  │RangedCombatStrat │
+    └───────────────┘  │HealerCombatStrat │
+                       └──────────────────┘
 ```
 
-#### 4.5.2 UnitMovement
+#### 4.5.2 状态机
 
-**职责：**
-- 沿路径自动行走（支持曲线/直线，统一归一化距离驱动）
-- 向目标点追击
-- 判断路径是否完成
+```
+Moving ──┬── DetectTarget() 找到敌人 ──► Fighting
+         ├── 进入驻扎点/资源点范围 ────► Garrisoned
+         ├── path 走完 ───────────────► AttackingTower
+         └── hp ≤ 0 ──────────────────► Dead
+
+Fighting ──┬── DetectTarget() 无敌人 ─► Moving
+           └── hp ≤ 0 ─────────────────► Dead
+
+Garrisoned ──┬── DetectTarget() 找到敌人 → Fighting（离开驻扎）
+             └── hp ≤ 0 ───────────────────► Dead
+
+AttackingTower ──┬── tower 被毁 ───► Moving
+                 └── hp ≤ 0 ────────► Dead
+```
+
+#### 4.5.3 UnitBrain（状态机调度器）
+
+**文件：** `Assets/Unit/NewScript/UnitBrain.cs`
+
+**职责：** 纯行为调度，不包含移动/战斗/驻扎逻辑。在 `Awake()` 中通过 `GetComponent<IMoveStrategy>()` 和 `GetComponent<ICombatStrategy>()` 获取策略组件。
 
 **核心方法：**
 
 | 方法 | 功能 |
 |------|------|
-| `SetPath(PathManager path)` | 设置行走路径，缓存总弧长 |
-| `MoveAlongPath()` | 沿路径匀速前进（弧长参数化保证曲线匀速） |
-| `MoveToTarget(Vector2 targetPos)` | 向目标点追击 |
-| `FlyToTarget(Vector3 targetPos)` | 飞行单位直线飞向目标 |
-| `IsPathCompleted()` | 判断路径是否走完 |
-| `StopMovement()` / `ResumeMovement()` | 暂停/恢复移动（驻扎用） |
+| `TakeDamage(float dmg, AttackType type)` | 外部调用入口，委托给 CombatStrategy 结算减伤后刷新血条 |
+| `SetPath(PathManager path)` | 委托给 MoveStrategy |
+| `StopMovement()` / `ResumeMovement()` | 委托给 MoveStrategy（驻扎用） |
 
-**移动机制：**
-- 使用 `pathProgress`（归一化距离 [0,1]）替代路径点索引
-- 每帧：`pathProgress += (speed × dt) / totalArcLength`
-- 位置通过 `pathManager.GetCurvePoint(pathProgress)` 获取
-- 曲线模式由 PathManager 的弧长 LUT 保证匀速
+#### 4.5.4 移动策略 (IMoveStrategy)
+
+**接口定义：** `Assets/Unit/NewScript/IMoveStrategy.cs`
+
+| 方法 | 功能 |
+|------|------|
+| `SetPath(PathManager)` | 绑定路径，缓存总弧长 |
+| `Move(float dt, float speed)` | 沿路径匀速推进（弧长参数化） |
+| `Stop()` / `Resume()` | 暂停/恢复（驻扎用） |
+| `IsPathCompleted()` | 路径是否走完（循环路径永远 false） |
+| `MoveToward(Vector2 target, float speed)` | 战斗追击移动 |
+
+**实现：**
+
+| 实现 | 文件 | 说明 |
+|------|------|------|
+| `GroundMoveStrategy` | `Movement/GroundMoveStrategy.cs` | 沿 PathManager 路径弧长推进（支持曲线/直线/循环） |
+| `FlightMoveStrategy` | `Movement/FlightMoveStrategy.cs` | 沿 Flight 类型路径推进，不旋转朝向 |
+
+#### 4.5.5 战斗策略 (ICombatStrategy)
+
+**接口定义：** `Assets/Unit/NewScript/ICombatStrategy.cs`
+
+| 方法 | 功能 |
+|------|------|
+| `DetectTarget(UnitAttr, Vector2)` | 在 detectRange 内搜寻最近敌人，近战跳过飞行单位 |
+| `TryExecute(Transform, dt, ...)` | 执行攻击/治疗行动 |
+| `SetTowerTarget(UnitAttr)` | 路径走完后锁定敌方防御塔 |
+| `TakeDamage(damage, type, attr, onDie)` | 结算防御减伤、扣血、死亡回调 |
+
+**实现：**
+
+| 实现 | 文件 | 说明 |
+|------|------|------|
+| `MeleeCombatStrategy` | `Combat/MeleeCombatStrategy.cs` | 索敌(按距离排序) + 追击 + 近战挥砍 + 防御结算 |
+| `RangedCombatStrategy` | `Combat/RangedCombatStrategy.cs` | 索敌(按距离排序) + 追击 + 生成投射物。伤害类型从 `UnitAttr.attackType` 读取 |
+| `HealerCombatStrategy` | `Combat/HealerCombatStrategy.cs` | 找血量%最低的友方 + 治疗。无目标时让状态机回 Moving |
+
+**RangedCombatStrategy Inspector 配置：**
+
+| 字段 | 说明 |
+|------|------|
+| `bulletPrefab` | 投射物预制体 |
+| `bulletSpeed` | 投射物飞行速度 |
+| `spawnHeightOffset` | 发射点高度偏移 |
+
+**HealerCombatStrategy Inspector 配置：**
+
+| 字段 | 说明 |
+|------|------|
+| `healAmount` | 每次治疗量 |
+| `healRange` | 治疗范围半径 |
+| `healCooldown` | 治疗冷却时间 |
+| `healEffectPrefab` | 治疗特效预制体 |
+| `effectHeightOffset` | 特效高度偏移 |
+| `canHealSelf` | 是否可治疗自己 |
+
+#### 4.5.6 各兵种组合
+
+| 兵种 | MoveStrategy | CombatStrategy |
+|------|-------------|----------------|
+| soldier / hound / Mechs / Enemy2 | GroundMoveStrategy | MeleeCombatStrategy |
+| FlyingUnit | **FlightMoveStrategy** | MeleeCombatStrategy |
+| Archer / Mage | GroundMoveStrategy | RangedCombatStrategy |
+| Healer | GroundMoveStrategy | HealerCombatStrategy |
+
+#### 4.5.7 UnitAttr（属性数据）
+
+**文件：** `Assets/Unit/GenericScript/UnitAttr.cs`（保留不变）
+
+**核心属性：**
+
+```csharp
+public CampType camp;                   // 所属阵营
+public float maxHp = 120f;             // 最大生命
+public float atk = 8f;                 // 攻击力
+public float moveSpeed = 1.8f;         // 移动速度
+public float atkRange = 1.2f;          // 攻击范围
+public float atkCD = 1f;               // 攻击冷却
+public float detectRange = 3f;         // 索敌范围
+public AttackType attackType;          // 攻击类型 (Physical/Magic)
+public float physicalDefense;          // 物理防御减伤
+public float magicDefense;             // 法术防御减伤
+public UnitType unitType;              // Ground / Flying
+public AttackRangeType attackRangeType; // Melee / Ranged
+```
+
+#### 4.5.8 Bullet（投射物）
+
+**文件：** `Assets/Unit/NewScript/Bullet.cs`
+
+v2 改进：
+- 检查目标存活状态（`targetAttr.currentHp <= 0`），不攻击尸体
+- 伤害通过 `GetComponent<UnitBrain>().TakeDamage()` 或 `GetComponent<TowerBase>().TakeDamage()` 结算
+- 伤害类型从发射方配置传递（`RangedCombatStrategy` 读取 `UnitAttr.attackType`）
+
+#### 4.5.9 v2 vs v1 差异总结
+
+| 方面 | v1（旧） | v2（新） |
+|------|---------|---------|
+| 组件数量 | 5-7 个（含特殊变体接管模式） | 统一 5 个 |
+| 索敌排序 | 不排序，取第一个 | 按距离排序，取最近 |
+| 攻击冷却 | UnitCombat.Update 始终运行；特殊变体只在范围内 | 所有 CombatStrategy.Update 始终运行 |
+| Mage 伤害类型 | 硬编码 Magic | 读取 `UnitAttr.attackType` |
+| Bullet 存活检查 | 只检查 null | 检查 `currentHp <= 0` |
+| 飞行单位 | free-flight 到硬编码坐标 | 沿 Flight 类型 PathManager 路径 |
+| 远程追击 | 无 | `RangedCombatStrategy.TryExecute` 含追击 |
+| Healer 接管方式 | 禁用 UnitAI + UnitCombat | HealerCombatStrategy 作为一等策略 |
 
 ---
 
@@ -605,8 +776,63 @@ public enum PathID
 ```csharp
 public enum AttackType
 {
-    Physical,  // 物理攻击
-    Magic      // 法术攻击
+    Physical,  // 物理攻击（结算 physicalDefense）
+    Magic      // 法术攻击（结算 magicDefense）
+}
+```
+
+### 5.4 UnitType
+
+```csharp
+public enum UnitType
+{
+    Ground, // 地面单位，沿 Ground 路径移动
+    Flying  // 飞行单位，沿 Flight 路径移动，近战无法攻击
+}
+```
+
+### 5.5 AttackRangeType
+
+```csharp
+public enum AttackRangeType
+{
+    Melee,  // 近战，不能攻击飞行单位
+    Ranged  // 远程，可攻击所有单位
+}
+```
+
+### 5.6 PathMoveType
+
+```csharp
+public enum PathMoveType
+{
+    Ground,  // 地面路径（默认），仅地面单位可部署
+    Flight   // 飞行路径，仅飞行单位可部署
+}
+```
+
+### 5.7 UnitState
+
+```csharp
+public enum UnitState
+{
+    Moving,         // 沿路径移动
+    Fighting,       // 与敌方单位交战
+    Garrisoned,     // 驻扎在资源点/驻扎点
+    AttackingTower, // 攻击敌方防御塔
+    Dead            // 已死亡
+}
+```
+
+### 5.8 WaveTriggerType
+
+```csharp
+public enum WaveTriggerType
+{
+    AfterPrevious,  // 上波结束后延迟触发
+    Concurrent,     // 与上波并发
+    Manual,         // 等待外部调用 Continue()
+    AllUnitsDead    // 场上无存活敌人后触发
 }
 ```
 
@@ -727,9 +953,13 @@ public enum AttackType
 ### 9.4 新增单位
 
 1. 创建单位预制体
-2. 添加 UnitAttr、UnitMovement、UnitCombat、UnitAI 组件
-3. 配置单位属性
-4. 关联到卡牌或波次配置
+2. 挂载组件：`UnitAttr` + `UnitUI` + `UnitBrain` + 一个 MoveStrategy + 一个 CombatStrategy
+3. 配置 `UnitAttr` 的各项数值（HP、攻击、速度、范围、阵营、类型等）
+4. 远程单位在 `RangedCombatStrategy` 中配置 `bulletPrefab`、`bulletSpeed`
+5. 治疗单位在 `HealerCombatStrategy` 中配置 `healRange`、`healAmount`、`healCooldown`
+6. 关联到卡牌 `CardData.unitPrefab` 或波次 `WaveData.unitPrefab`
+
+> 旧预制体可通过 `Tools → 迁移兵种预制体到新体系` 一键升级。
 
 ### 9.5 新增关卡
 
@@ -758,8 +988,16 @@ public enum AttackType
 | [GarrisonPointManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/GarrisonPoint/GarrisonPointManager.cs) | 驻扎点管理器（场景级单例） |
 | [GarrisonPointPlacer.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/GarrisonPoint/GarrisonPointPlacer.cs) | 驻扎点放置交互 |
 | [WaveGenerator.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Wave/WaveGenerator.cs) | 波次生成器 |
-| [UnitAttr.cs](file:///d:/project/My%20project/Assets/Unit/GenericScript/UnitAttr.cs) | 单位属性 |
-| [UnitMovement.cs](file:///d:/project/My%20project/Assets/Unit/GenericScript/UnitMovement.cs) | 单位移动 |
+| [UnitBrain.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/UnitBrain.cs) | 单位状态机调度器 |
+| [UnitAttr.cs](file:///d:/project/My%20project/Assets/Unit/GenericScript/UnitAttr.cs) | 单位属性数据 |
+| [GroundMoveStrategy.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Movement/GroundMoveStrategy.cs) | 地面沿路径移动 |
+| [FlightMoveStrategy.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Movement/FlightMoveStrategy.cs) | 飞行沿路径移动 |
+| [MeleeCombatStrategy.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Combat/MeleeCombatStrategy.cs) | 近战战斗策略 |
+| [RangedCombatStrategy.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Combat/RangedCombatStrategy.cs) | 远程射击策略 |
+| [HealerCombatStrategy.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Combat/HealerCombatStrategy.cs) | 治疗策略 |
+| [Bullet.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Bullet.cs) | 投射物 |
+| [PathMoveType.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/PathMoveType.cs) | 路径移动类型与兼容性校验 |
+| [UnitState.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/UnitState.cs) | 单位状态枚举 |
 | [Math2DHelper.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Helper/Math2DHelper.cs) | 2D数学工具 |
 | [DialogueManager.cs](file:///d:/project/My%20project/Assets/Dialogue/DialogueManager.cs) | 对话管理器 |
 | [SaveManager.cs](file:///d:/project/My%20project/Assets/Save/SaveManager.cs) | 存档管理器（静态） |
@@ -780,7 +1018,7 @@ public enum AttackType
    - 实现卡牌抽卡机制
 
 2. **单位系统扩展**
-   - 添加更多单位类型（远程、法术、治疗等）
+   - 添加更多策略组件（如 AoECombatStrategy、BuffCombatStrategy）
    - 实现单位技能系统
    - 添加单位升级与进化
 
@@ -801,4 +1039,4 @@ public enum AttackType
 
 ---
 
-*文档更新时间：2026-06-10*
+*文档更新时间：2026-07-13*

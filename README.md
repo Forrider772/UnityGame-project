@@ -126,52 +126,90 @@ var result = path.GetClosestPoint(worldPosition);
 ## 4. 单位系统
 
 **核心文件:**
-- `Assets/Unit/GenericScript/UnitAttr.cs` — 属性数据组件
-- `Assets/Unit/GenericScript/UnitAI.cs` — 行为决策组件
-- `Assets/Unit/GenericScript/UnitMovement.cs` — 移动执行组件
-- `Assets/Unit/GenericScript/UnitCombat.cs` — 战斗执行组件
-- `Assets/Unit/GenericScript/UnitUI.cs` — 血条 UI 组件
-- `Assets/Unit/GenericScript/ArcherCombat.cs` / `MageCombat.cs` / `HealerCombat.cs` — 特殊兵种战斗变体
-- `Assets/Unit/GenericScript/Bullet.cs` — 投射物
-- `Assets/Unit/GenericScript/FloatNumber.cs` — 浮动伤害数字
+- `Assets/Unit/GenericScript/UnitAttr.cs` — 属性数据组件（保留不变）
+- `Assets/Unit/GenericScript/UnitUI.cs` — 血条 UI 组件（保留不变）
+- `Assets/Unit/GenericScript/FloatNumber.cs` — 浮动伤害数字（保留不变）
+- `Assets/Unit/NewScript/UnitBrain.cs` — **状态机调度器**（替代旧 UnitAI）
+- `Assets/Unit/NewScript/UnitState.cs` — 状态枚举：`Moving / Fighting / Garrisoned / AttackingTower / Dead`
+- `Assets/Unit/NewScript/IMoveStrategy.cs` — 移动策略接口
+- `Assets/Unit/NewScript/ICombatStrategy.cs` — 战斗策略接口
+- `Assets/Unit/NewScript/Movement/GroundMoveStrategy.cs` — 地面沿路径移动
+- `Assets/Unit/NewScript/Movement/FlightMoveStrategy.cs` — 飞行沿路径移动
+- `Assets/Unit/NewScript/Combat/MeleeCombatStrategy.cs` — 近战（索敌排序 + 追击 + 挥砍）
+- `Assets/Unit/NewScript/Combat/RangedCombatStrategy.cs` — 远程投射物（索敌排序 + 追击 + 生成子弹）
+- `Assets/Unit/NewScript/Combat/HealerCombatStrategy.cs` — 治疗（找最低血量友方）
+- `Assets/Unit/NewScript/Bullet.cs` — 投射物（检查目标存活 + 伤害类型从配置读取）
+- `Assets/Unit/Editor/UnitPrefabMigrator.cs` — 预制体一键迁移工具
 
-### 单位架构
+### 单位架构（v2 — 策略组件模式）
 
-单位采用模块化组件设计，每个组件只负责一个关注点：
+每个单位预制体由 **5 个 MonoBehaviour** 组合而成：
+
+`UnitAttr → UnitUI → UnitBrain → [MoveStrategy] → [CombatStrategy]`
 
 | 组件 | 职责 |
 |------|------|
 | `UnitAttr` | 纯数据存储：HP、攻击、速度、射程、防御、阵营、单位类型、攻击类型 |
-| `UnitAI` | 每帧决策：检测敌人 → 战斗 / 驻扎点交互 / 资源点交互 / 沿路径移动 / 攻击防御塔 |
-| `UnitMovement` | 执行移动：沿路径匀速前进（支持曲线/直线/循环）、追击、飞行 |
-| `UnitCombat` | 执行战斗：索敌（OverlapCircle）、攻击冷却、伤害计算、死亡处理 |
 | `UnitUI` | 血条生成、刷新、销毁 |
+| `UnitBrain` | 纯状态机调度：按状态分支，委托 MoveStrategy/CombatStrategy 执行具体逻辑 |
+| `IMoveStrategy` | 移动策略：沿路径行走（GroundMoveStrategy）或飞行沿路径（FlightMoveStrategy） |
+| `ICombatStrategy` | 战斗策略：近战（Melee）/ 远程投射物（Ranged）/ 治疗（Healer） |
+
+### 各兵种组合
+
+| 兵种 | MoveStrategy | CombatStrategy |
+|------|-------------|----------------|
+| soldier / hound / Mechs / Enemy2 | GroundMoveStrategy | MeleeCombatStrategy |
+| FlyingUnit | **FlightMoveStrategy** | MeleeCombatStrategy |
+| Archer / Mage | GroundMoveStrategy | RangedCombatStrategy |
+| Healer | GroundMoveStrategy | HealerCombatStrategy |
 
 ### 创建单位预制体
 
-1. 创建 GameObject，按需挂载组件：**必须的** → `UnitAttr` + `UnitAI` + `UnitMovement` + `UnitCombat` + `UnitUI`
+1. 创建 GameObject，挂载组件：`UnitAttr` + `UnitUI` + `UnitBrain` + 一个 MoveStrategy + 一个 CombatStrategy
 2. 配置 `UnitAttr` 的关键属性：
 
 | 参数 | 说明 |
 |------|------|
 | `camp` | 所属阵营 |
 | `maxHp` / `atk` / `moveSpeed` / `atkRange` / `atkCD` | 基础战斗属性 |
-| `detectRange` | 大范围搜寻敌人半径 |
+| `detectRange` | 搜寻敌人半径（所有兵种统一按距离排序索敌） |
 | `physicalDefense` / `magicDefense` | 对应攻击类型的减伤值 |
-| `unitType` | `Ground`（沿路径走）或 `Flying`（直线飞向目标） |
+| `unitType` | `Ground`（沿路径走）或 `Flying`（沿 Flight 路径飞行） |
 | `attackRangeType` | `Melee`（近战，不能攻击飞行单位）或 `Ranged`（远程） |
 | `attackType` | `Physical` 或 `Magic`（决定受哪种防御减免） |
 
-3. 配置 `UnitAI` 的 `enemyBasePosition`（敌方防御塔坐标）
-4. 特殊兵种可替换 `UnitCombat` 为 `ArcherCombat` / `MageCombat` / `HealerCombat`
+3. 远程兵种需在 `RangedCombatStrategy` 中配置 `bulletPrefab`、`bulletSpeed` 等参数
+4. 治疗兵种需在 `HealerCombatStrategy` 中配置 `healRange`、`healAmount`、`healCooldown` 等参数
 
-### AI 行为优先级
+> 也可直接运行 `Tools → 迁移兵种预制体到新体系`，一键将旧预制体升级到新架构。
 
-1. 范围内有敌方单位 → 脱离驻扎 → 追击并攻击
-2. 驻扎点范围内 → 驻扎/抢占判定
-3. 资源点范围内 → 驻扎/抢占判定
-4. 无敌人且路径未走完 → 沿路径前进
-5. 路径已走完 → 锁定并攻击敌方防御塔
+### 状态机行为
+
+```
+Moving ──┬── DetectTarget() 找到敌人 ──► Fighting
+         ├── 进入驻扎点/资源点范围 ────► Garrisoned
+         ├── path 走完 ───────────────► AttackingTower
+         └── hp ≤ 0 ──────────────────► Dead
+
+Fighting ──┬── DetectTarget() 无敌人 ─► Moving
+           └── hp ≤ 0 ─────────────────► Dead
+
+Garrisoned ──┬── DetectTarget() 找到敌人 → Fighting（离开驻扎）
+             └── hp ≤ 0 ───────────────────► Dead
+
+AttackingTower ──┬── tower 被毁 ───► Moving
+                 └── hp ≤ 0 ────────► Dead
+```
+
+### 与旧系统的差异
+
+- 删除了 `UnitAI` / `UnitCombat` / `UnitMovement` / `ArcherCombat` / `MageCombat` / `HealerCombat` 旧组件
+- 删除了 `enemyBasePosition` 字段（飞行单位改用 Flight 路径）
+- 索敌统一按距离排序取最近目标（旧版不排序）
+- 远程兵种伤害类型从 `UnitAttr.attackType` 读取（旧版 Mage 硬编码 Magic）
+- Bullet 检查目标存活状态（旧版不检查，可"鞭尸"）
+- 攻击冷却始终运行（旧版近战在 Update 中运行，但新版最初只在范围内运行导致飞行单位 bug）
 
 ---
 
