@@ -150,6 +150,9 @@ public class WaveGenerator : MonoBehaviour
             // 在生成点位置生成单位
             GameObject unit = Instantiate(wave.unitPrefab, spawnAt.position, Quaternion.identity);
 
+            // 注入阵营和layer（预制体可跨阵营复用）
+            UnitHelper.Configure(unit, waveList.camp);
+
             // 给单位移动脚本赋值行走路径
             UnitBrain brain = unit.GetComponent<UnitBrain>();
             if (brain != null)

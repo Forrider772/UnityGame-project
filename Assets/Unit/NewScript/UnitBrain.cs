@@ -95,7 +95,7 @@ public class UnitBrain : MonoBehaviour
     // ==================== 状态更新方法 ====================
 
     /// <summary>
-    /// Moving 状态：沿路径行走，检测敌人/驻扎点
+    /// Moving 状态：沿路径行走，检测敌人/驻扎点/塔
     /// </summary>
     void UpdateMoving()
     {
@@ -110,6 +110,9 @@ public class UnitBrain : MonoBehaviour
         // 检测驻扎点/资源点
         if (TryGarrisonInteraction()) return;
 
+        // 检测敌方塔是否在攻击范围内（不再要求路径走完）
+        if (TryTargetTower()) return;
+
         // 路径未走完 → 继续移动
         if (!moveStrategy.IsPathCompleted())
         {
@@ -117,11 +120,7 @@ public class UnitBrain : MonoBehaviour
             return;
         }
 
-        // 路径已走完 → 锁定塔
-        combatStrategy.SetTowerTarget(attr);
-        if (combatStrategy.CurrentTarget != null)
-            state = UnitState.AttackingTower;
-        // 塔已不存在则留在 Moving，不切换（安全空转）
+        // 路径已走完 → 停在终点，等待塔进入攻击范围（通过 TryTargetTower 触发）
     }
 
     /// <summary>
@@ -132,7 +131,6 @@ public class UnitBrain : MonoBehaviour
         Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
         if (enemy == null)
         {
-            // 敌人消失（被击杀或移出范围）→ 回到移动
             state = UnitState.Moving;
             return;
         }
@@ -142,18 +140,53 @@ public class UnitBrain : MonoBehaviour
 
     /// <summary>
     /// AttackingTower 状态：攻击敌方防御塔
+    /// 塔被毁或超出攻击范围且路径未走完 → 回到 Moving
     /// </summary>
     void UpdateAttackingTower()
     {
         if (combatStrategy.CurrentTarget == null)
         {
-            // 塔已被摧毁 → 回到 Moving（路径已走完，会再次尝试 SetTowerTarget）
+            state = UnitState.Moving;
+            return;
+        }
+
+        // 超出攻击范围 → 回 Moving 继续走路（或追击塔）
+        float dist = Vector2.Distance(transform.position, combatStrategy.CurrentTarget.position);
+        if (dist > attr.atkRange)
+        {
             state = UnitState.Moving;
             return;
         }
 
         combatStrategy.TryExecute(combatStrategy.CurrentTarget,
             Time.deltaTime, attr, transform.position, moveStrategy);
+    }
+
+    // ==================== 塔检测 ====================
+
+    /// <summary>
+    /// 检测敌方塔是否在攻击范围内，在则锁定并切入 AttackingTower
+    /// </summary>
+    bool TryTargetTower()
+    {
+        GameObject tower = attr.camp == CampType.Player
+            ? BattleManager.Instance.enemyTower
+            : BattleManager.Instance.playerTower;
+
+        if (tower == null) return false;
+
+        float dist = Vector2.Distance(transform.position, tower.transform.position);
+        if (dist <= attr.atkRange)
+        {
+            combatStrategy.SetTowerTarget(attr);
+            if (combatStrategy.CurrentTarget != null)
+            {
+                state = UnitState.AttackingTower;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // ==================== 驻扎交互 ====================

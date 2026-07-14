@@ -199,6 +199,9 @@ public class CardDeploy : MonoBehaviour
         Vector3 spawnPos = targetPath.GetStartPoint();
         GameObject unit = Instantiate(selectedCard.unitPrefab, spawnPos, Quaternion.identity);
 
+        // 注入阵营和layer（预制体可跨阵营复用）
+        UnitHelper.Configure(unit, selectedCard.camp);
+
         // 3. 为单位的移动组件设置路径
         UnitBrain brain = unit.GetComponent<UnitBrain>();
         if (brain != null)
