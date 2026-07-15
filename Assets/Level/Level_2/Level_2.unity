@@ -808,6 +808,99 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1480028066}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &226323202
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 226323204}
+  - component: {fileID: 226323203}
+  m_Layer: 0
+  m_Name: LevelSetup
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &226323203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 226323202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c87f01bb8377e144c810a06ff100893d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  levelName: 
+  levelIndex: 0
+  levelDescription: 
+  overrideBattleConfig: 1
+  maxCost: 10
+  costAddSpeed: 1
+  startingCost: 3
+  overrideWaveConfig: 1
+  waveList: {fileID: 0}
+  overrideTowerConfig: 1
+  playerTower: {fileID: 0}
+  enemyTower: {fileID: 0}
+  overridePlayerTowerProps: 0
+  playerTowerOverride:
+    overrideHp: 0
+    hp: 800
+    overrideAtk: 0
+    atk: 12
+    overrideAtkRange: 0
+    atkRange: 3.5
+    overrideAtkCD: 0
+    atkCD: 1.2
+    overridePhysicalDefense: 0
+    physicalDefense: 0
+    overrideMagicDefense: 0
+    magicDefense: 0
+  overrideEnemyTowerProps: 0
+  enemyTowerOverride:
+    overrideHp: 0
+    hp: 800
+    overrideAtk: 0
+    atk: 12
+    overrideAtkRange: 0
+    atkRange: 3.5
+    overrideAtkCD: 0
+    atkCD: 1.2
+    overridePhysicalDefense: 0
+    physicalDefense: 0
+    overrideMagicDefense: 0
+    magicDefense: 0
+  overrideDeckConfig: 1
+  availableCards: []
+  overrideResourcePointConfig: 1
+  resourcePointMaxGarrison: 3
+  resourcePointRange: 1.5
+  resourcePointBonus: 5
+  overrideGarrisonConfig: 1
+  garrisonPointMaxGarrison: 3
+  garrisonPointRange: 1.5
+--- !u!4 &226323204
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 226323202}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.8690412, y: 0.1775922, z: -9.969265}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &229325507
 GameObject:
   m_ObjectHideFlags: 0
@@ -7167,3 +7260,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 2014125475}
   - {fileID: 60906463}
+  - {fileID: 226323204}

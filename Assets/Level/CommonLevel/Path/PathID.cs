@@ -6,6 +6,8 @@ public enum PathID
 {
     Path_01,
     Path_02,
-    Path_03
+    Path_03,
+    Path_04,
+    Path_05
     // 后续需要几条直接往下加
 }

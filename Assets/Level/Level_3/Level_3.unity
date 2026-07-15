@@ -592,7 +592,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   waveGenerator: {fileID: 187726505}
-  waveList: {fileID: 11400000, guid: 88c72aaec403f3d4ab7fd3b84b964fcb, type: 2}
+  waveList: {fileID: 11400000, guid: 9d9983d5e86176e4fba868e0d4b1e5d1, type: 2}
   playerTower: {fileID: 1907175069}
   enemyTower: {fileID: 461187733}
   playerTowerAlive: 1
@@ -818,6 +818,99 @@ RectTransform:
   m_AnchoredPosition: {x: -122, y: -1}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &234093611
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 234093613}
+  - component: {fileID: 234093612}
+  m_Layer: 0
+  m_Name: LevelSetup
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &234093612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 234093611}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c87f01bb8377e144c810a06ff100893d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  levelName: 
+  levelIndex: 0
+  levelDescription: 
+  overrideBattleConfig: 1
+  maxCost: 10
+  costAddSpeed: 1
+  startingCost: 3
+  overrideWaveConfig: 1
+  waveList: {fileID: 0}
+  overrideTowerConfig: 1
+  playerTower: {fileID: 0}
+  enemyTower: {fileID: 0}
+  overridePlayerTowerProps: 0
+  playerTowerOverride:
+    overrideHp: 0
+    hp: 800
+    overrideAtk: 0
+    atk: 12
+    overrideAtkRange: 0
+    atkRange: 3.5
+    overrideAtkCD: 0
+    atkCD: 1.2
+    overridePhysicalDefense: 0
+    physicalDefense: 0
+    overrideMagicDefense: 0
+    magicDefense: 0
+  overrideEnemyTowerProps: 0
+  enemyTowerOverride:
+    overrideHp: 0
+    hp: 800
+    overrideAtk: 0
+    atk: 12
+    overrideAtkRange: 0
+    atkRange: 3.5
+    overrideAtkCD: 0
+    atkCD: 1.2
+    overridePhysicalDefense: 0
+    physicalDefense: 0
+    overrideMagicDefense: 0
+    magicDefense: 0
+  overrideDeckConfig: 1
+  availableCards: []
+  overrideResourcePointConfig: 1
+  resourcePointMaxGarrison: 3
+  resourcePointRange: 1.5
+  resourcePointBonus: 5
+  overrideGarrisonConfig: 1
+  garrisonPointMaxGarrison: 3
+  garrisonPointRange: 1.5
+--- !u!4 &234093613
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 234093611}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.8690412, y: 0.1775922, z: -9.969265}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &239259317
 GameObject:
   m_ObjectHideFlags: 0
@@ -1272,8 +1365,7 @@ Transform:
   - {fileID: 1907175070}
   - {fileID: 461187734}
   - {fileID: 460905685}
-  - {fileID: 1676741012}
-  - {fileID: 839452992}
+  - {fileID: 1144105514}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &460905684
@@ -1947,7 +2039,7 @@ GameObject:
   - component: {fileID: 839452992}
   - component: {fileID: 839452993}
   m_Layer: 0
-  m_Name: ResourcePoint (1)
+  m_Name: ResourcePoint2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1961,12 +2053,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 839452991}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.61, y: 2.77, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 13.479041, y: 2.5924077, z: 9.969265}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 442872465}
+  m_Father: {fileID: 1144105514}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &839452993
 MonoBehaviour:
@@ -1980,8 +2072,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99985913bc2cd5d49add88fc4456dd9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pathID: 0
-  pathWaypointIndex: 0
   garrisonRange: 1.5
   resourceBonus: 5
   maxGarrison: 3
@@ -2600,6 +2690,39 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1712664366}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1144105513
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1144105514}
+  m_Layer: 0
+  m_Name: ResourcePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1144105514
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1144105513}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -1.8690412, y: 0.1775922, z: -9.969265}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1676741012}
+  - {fileID: 839452992}
+  m_Father: {fileID: 442872465}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1150391516
 GameObject:
   m_ObjectHideFlags: 0
@@ -2744,6 +2867,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   garrisonPointPrefab: {fileID: 4405011921408526384, guid: fc20807b0796c064eb3e3be03812466a, type: 3}
   snapMaxDistance: 2
+  defaultMaxGarrison: 3
+  defaultGarrisonRange: 1.5
 --- !u!1 &1229336891
 GameObject:
   m_ObjectHideFlags: 0
@@ -3029,6 +3154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   camp: 0
   pathId: 0
+  moveType: 0
   pathPoints:
   - {fileID: 478384335}
   - {fileID: 1292567686}
@@ -3038,6 +3164,7 @@ MonoBehaviour:
   useCurve: 0
   curveAlpha: 0.5
   curveSamples: 15
+  isLooping: 0
 --- !u!1 &1390521076
 GameObject:
   m_ObjectHideFlags: 0
@@ -3676,6 +3803,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   camp: 1
   pathId: 0
+  moveType: 0
   pathPoints:
   - {fileID: 1782661352}
   - {fileID: 589763576}
@@ -3685,6 +3813,7 @@ MonoBehaviour:
   useCurve: 0
   curveAlpha: 0.5
   curveSamples: 15
+  isLooping: 0
 --- !u!1 &1564575996
 GameObject:
   m_ObjectHideFlags: 0
@@ -4179,7 +4308,7 @@ GameObject:
   - component: {fileID: 1676741012}
   - component: {fileID: 1676741013}
   m_Layer: 0
-  m_Name: ResourcePoint
+  m_Name: ResourcePoint1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4193,12 +4322,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1676741011}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -9.28, y: -3.56, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -7.4109583, y: -3.7375922, z: 9.969265}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 442872465}
+  m_Father: {fileID: 1144105514}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1676741013
 MonoBehaviour:
@@ -4212,8 +4341,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99985913bc2cd5d49add88fc4456dd9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pathID: 1
-  pathWaypointIndex: 0
   garrisonRange: 1.5
   resourceBonus: 5
   maxGarrison: 3
@@ -4477,12 +4604,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   camp: 0
   pathId: 1
+  moveType: 0
   pathPoints:
   - {fileID: 1390521077}
   - {fileID: 1128645288}
   useCurve: 0
   curveAlpha: 0.5
   curveSamples: 15
+  isLooping: 0
 --- !u!1 &1761763707
 GameObject:
   m_ObjectHideFlags: 0
@@ -6138,3 +6267,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 885100276}
   - {fileID: 442872465}
+  - {fileID: 234093613}
