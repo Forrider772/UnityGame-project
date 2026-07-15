@@ -21,6 +21,7 @@ public class WaveGenerator : MonoBehaviour
     private bool[] waveSpawningDone;                    // 每波生成是否完毕
     private bool isWaitingForContinue;                  // Manual 模式挂起标记
     private Coroutine waveLoopCoroutine;
+    private List<GameObject> externalUnits;             // 外部注册的初始布阵单位，同样参与 AllUnitsDead 判定
 
     /// <summary>是否正在运行波次</summary>
     public bool IsRunning { get; private set; }
@@ -42,6 +43,9 @@ public class WaveGenerator : MonoBehaviour
         waveList = list;
         IsRunning = true;
         CurrentWaveIndex = -1;
+        // 保留外部已注册的初始单位（InitialUnitPlacer 在 StartWave 之前运行），仅 null 时初始化
+        if (externalUnits == null)
+            externalUnits = new List<GameObject>();
         waveLoopCoroutine = StartCoroutine(WaveLoop());
     }
 
@@ -182,11 +186,23 @@ public class WaveGenerator : MonoBehaviour
     }
 
     /// <summary>
+    /// 外部注册初始布阵单位，使其参与 AllUnitsDead 判定
+    /// （供 InitialUnitPlacer 等系统调用）
+    /// </summary>
+    public void RegisterExternalUnit(GameObject unit)
+    {
+        if (externalUnits == null)
+            externalUnits = new List<GameObject>();
+        externalUnits.Add(unit);
+    }
+
+    /// <summary>
     /// 检查场上是否还有存活的已生成单位
-    /// （遍历所有已生成完的波次，清理 null 的同时判断是否全死光）
+    /// （遍历波次单位 + 外部注册单位，清理 null 的同时判断是否全死光）
     /// </summary>
     bool AnyTrackedUnitStillAlive()
     {
+        // 检查波次生成的单位
         for (int i = 0; i < waveSpawnedUnits.Length; i++)
         {
             var units = waveSpawnedUnits[i];
@@ -200,6 +216,19 @@ public class WaveGenerator : MonoBehaviour
             if (units.Count > 0)
                 return true;
         }
+
+        // 检查外部注册的初始布阵单位
+        if (externalUnits != null)
+        {
+            for (int i = externalUnits.Count - 1; i >= 0; i--)
+            {
+                if (externalUnits[i] == null)
+                    externalUnits.RemoveAt(i);
+            }
+            if (externalUnits.Count > 0)
+                return true;
+        }
+
         return false;
     }
 }

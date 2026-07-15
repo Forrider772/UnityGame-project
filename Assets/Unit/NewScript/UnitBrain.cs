@@ -278,6 +278,15 @@ public class UnitBrain : MonoBehaviour
     }
 
     /// <summary>
+    /// 设置移动路径，并将单位定位到路径上距 worldPosition 最近的点
+    /// （供 InitialUnitPlacer 等初始布阵系统调用，避免单位从路径外传送回起点）
+    /// </summary>
+    public void SetPathFromPosition(PathManager path, Vector3 worldPosition)
+    {
+        moveStrategy?.SetPathAtClosestPoint(path, worldPosition);
+    }
+
+    /// <summary>
     /// 暂停移动（供 ResourcePoint / GarrisonPoint 调用）
     /// </summary>
     public void StopMovement()

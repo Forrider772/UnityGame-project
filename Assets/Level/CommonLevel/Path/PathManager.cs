@@ -52,19 +52,22 @@ public partial class PathManager : MonoBehaviour
     private void Awake()
     {
         visualManager = GetComponent<PathVisualManager>();
+        BuildCurveData();
     }
 
-    private void Start()
+    /// <summary>
+    /// 预计算曲线弧长表（Awake 中执行，确保任何 Start 阶段查询路径时数据已就绪）
+    /// </summary>
+    private void BuildCurveData()
     {
         Vector2[] rawPoints = GetRawControlPoints();
 
-        // 曲线模式：预计算参数化和弧长表
         if (useCurve && rawPoints.Length >= 2)
         {
             if (isLooping)
             {
-                mathSegCount = rawPoints.Length; // 循环模式有 n 段（含闭合段）
-                nodeParams = CatmullRomMath.BuildLoopNodeParams(rawPoints, curveAlpha); // n+1 元素
+                mathSegCount = rawPoints.Length;
+                nodeParams = CatmullRomMath.BuildLoopNodeParams(rawPoints, curveAlpha);
                 BuildArcLengthTable(rawPoints, nodeParams, mathSegCount);
             }
             else
@@ -78,7 +81,10 @@ public partial class PathManager : MonoBehaviour
         {
             mathSegCount = 0;
         }
+    }
 
+    private void Start()
+    {
         // 获取显示用路径点（直线=原始点，曲线=采样点）
         Vector2[] waypoints = GetWaypoints2D();
 

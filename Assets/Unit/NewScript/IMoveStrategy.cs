@@ -7,8 +7,11 @@ using UnityEngine;
 /// </summary>
 public interface IMoveStrategy
 {
-    /// <summary>绑定路径，由 WaveGenerator/CardDeploy 在生成时调用</summary>
+    /// <summary>绑定路径（从起点开始），由 WaveGenerator/CardDeploy 在生成时调用</summary>
     void SetPath(PathManager path);
+
+    /// <summary>绑定路径并定位到路径上距 worldPosition 最近的点（初始布阵用）</summary>
+    void SetPathAtClosestPoint(PathManager path, Vector3 worldPosition);
 
     /// <summary>每帧沿路径移动，speed 来自 UnitAttr.moveSpeed</summary>
     void Move(float deltaTime, float speed);
