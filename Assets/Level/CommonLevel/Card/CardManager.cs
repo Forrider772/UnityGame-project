@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 卡牌管理器（单例）
 /// 功能：
 /// 1. 根据玩家卡组生成所有卡牌UI
-/// 2. 管理卡牌选中、取消选中
+/// 2. 通过 ToggleGroup 管理卡牌互斥选中/取消选中
 /// </summary>
 public class CardManager : MonoBehaviour
 {
@@ -29,10 +30,22 @@ public class CardManager : MonoBehaviour
     /// </summary>
     public CardInteraction CurrentSelected;
 
+    // ToggleGroup 实现互斥单选
+    private ToggleGroup toggleGroup;
+
     /// <summary>
-    /// 初始化单例
+    /// 初始化单例和 ToggleGroup
     /// </summary>
-    void Awake() => Instance = this;
+    void Awake()
+    {
+        Instance = this;
+
+        // 确保 cardParent 上有 ToggleGroup
+        toggleGroup = cardParent.GetComponent<ToggleGroup>();
+        if (toggleGroup == null)
+            toggleGroup = cardParent.gameObject.AddComponent<ToggleGroup>();
+        toggleGroup.allowSwitchOff = true;  // 允许点击已选中卡牌来取消选中
+    }
 
     /// <summary>
     /// 开局生成卡牌UI
@@ -56,6 +69,8 @@ public class CardManager : MonoBehaviour
     {
         var go = Instantiate(cardPrefab, cardParent);
         var card = go.GetComponent<CardInteraction>();
+        // 将 Toggle 注册到 ToggleGroup 实现互斥单选
+        go.GetComponent<Toggle>().group = toggleGroup;
         card.Init(data);
         cardList.Add(card);
     }
@@ -71,28 +86,30 @@ public class CardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 卡牌点击回调
+    /// 卡牌被选中回调（由 CardInteraction.OnToggleChanged 调用）
     /// </summary>
-    /// <param name="clickedCard">被点击的卡牌</param>
-    public void OnCardClicked(CardInteraction clickedCard)
+    public void OnCardSelected(CardInteraction card)
     {
-        // 取消旧选中
-        if (CurrentSelected != null && CurrentSelected != clickedCard)
-            CurrentSelected.Deselect();
-
-        // 设置新选中
-        CurrentSelected = clickedCard;
-        CurrentSelected.Select();
+        CurrentSelected = card;
     }
-    
+
     /// <summary>
-    /// 取消选中当前卡牌
+    /// 卡牌取消选中回调（由 CardInteraction.OnToggleChanged 调用）
+    /// </summary>
+    public void OnCardDeselected(CardInteraction card)
+    {
+        if (CurrentSelected == card)
+            CurrentSelected = null;
+    }
+
+    /// <summary>
+    /// 取消选中当前卡牌（由 CardDeploy 调用）
     /// </summary>
     public void DeselectCurrentCard()
     {
         if (CurrentSelected != null)
         {
-            CurrentSelected.Deselect();
+            CurrentSelected.ForceDeselect();
             CurrentSelected = null;
         }
     }

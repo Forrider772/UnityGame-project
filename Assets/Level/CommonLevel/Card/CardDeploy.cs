@@ -188,12 +188,9 @@ public class CardDeploy : MonoBehaviour
             return;
         }
 
-        // 1. 扣费，若费用不足则提示并返回（不退出部署模式）
+        // 1. 扣费（费用不足时已由 CardInteraction 阻止选中，此处为安全兜底）
         if (!BattleManager.Instance.UseCost(selectedCard.cost))
-        {
-            Debug.Log("费用不足，无法部署");
             return;
-        }
 
         // 2. 在路线起点生成单位
         Vector3 spawnPos = targetPath.GetStartPoint();
