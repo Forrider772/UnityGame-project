@@ -1623,8 +1623,8 @@ MonoBehaviour:
   maxCost: 10
   costAddSpeed: 1
   startingCost: 3
-  overrideWaveConfig: 0
-  waveList: {fileID: 0}
+  overrideWaveConfig: 1
+  waveList: {fileID: 11400000, guid: a94f804c070544a4a820d1c305d6119b, type: 2}
   overrideTowerConfig: 0
   playerTower: {fileID: 0}
   enemyTower: {fileID: 0}

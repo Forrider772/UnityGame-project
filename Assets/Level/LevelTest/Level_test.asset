@@ -21,11 +21,11 @@ MonoBehaviour:
     spawnCount: 3
     spawnInterval: 2
     triggerType: 0
-    nextWaveInterval: 2
+    delayBeforeStart: 2
   - unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
     spawnPoint: {fileID: 0}
     pathID: 1
     spawnCount: 2
     spawnInterval: 2
-    triggerType: 0
-    nextWaveInterval: 2
+    triggerType: 1
+    delayBeforeStart: 2

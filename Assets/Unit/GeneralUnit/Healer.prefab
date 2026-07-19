@@ -76,8 +76,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 1187708677
+  m_SortingLayer: 3
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
   m_Color: {r: 0, g: 1, b: 0.87995815, a: 1}
@@ -158,7 +158,7 @@ MonoBehaviour:
   physicalDefense: 0
   magicDefense: 50
   hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
-  unitType: 0
+  moveType: 0
   attackRangeType: 0
   currentHp: 0
   isGarrisoned: 0

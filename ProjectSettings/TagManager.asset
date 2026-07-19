@@ -42,3 +42,24 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Background
+    uniqueID: 1270795067
+    locked: 0
+  - name: Map
+    uniqueID: 1053116777
+    locked: 0
+  - name: Path
+    uniqueID: 2326163501
+    locked: 0
+  - name: Units
+    uniqueID: 1187708677
+    locked: 0
+  - name: Foreground
+    uniqueID: 2977768985
+    locked: 0
+  - name: Effects
+    uniqueID: 3286242581
+    locked: 0
+  - name: BattleUI
+    uniqueID: 948701925
+    locked: 0
