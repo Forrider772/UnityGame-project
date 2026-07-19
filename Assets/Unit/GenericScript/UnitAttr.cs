@@ -10,15 +10,6 @@ public enum AttackType
 }
 
 /// <summary>
-/// 单位类型枚举（新增）
-/// </summary>
-public enum UnitType
-{
-    Ground, // 地面单位（默认值，原有兵种自动继承）
-    Flying  // 飞行单位
-}
-
-/// <summary>
 /// 攻击距离类型枚举（新增）
 /// </summary>
 public enum AttackRangeType
@@ -55,7 +46,7 @@ public class UnitAttr : MonoBehaviour
 
     [Header("单位类型配置（新增）")]
     [Tooltip("单位类型：地面/飞行")]
-    public UnitType unitType = UnitType.Ground;
+    public MoveType moveType = MoveType.Ground;
     
     [Tooltip("攻击类型：近战/远程")]
     public AttackRangeType attackRangeType = AttackRangeType.Melee;

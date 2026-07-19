@@ -39,7 +39,7 @@ public class MeleeCombatStrategy : MonoBehaviour, ICombatStrategy
 
                 // 核心规则：近战不能攻击飞行单位
                 if (attr.attackRangeType == AttackRangeType.Melee
-                    && ta.unitType == UnitType.Flying)
+                    && ta.moveType == MoveType.Flying)
                     return false;
 
                 return true;

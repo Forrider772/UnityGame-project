@@ -64,7 +64,7 @@ public class UnitCombat : MonoBehaviour
                 // ✅ 核心规则：近战单位 不能攻击 飞行单位
                 // 远程单位和防御塔 可以攻击 所有单位
                 if (attr.attackRangeType == AttackRangeType.Melee 
-                    && targetAttr.unitType == UnitType.Flying)
+                    && targetAttr.moveType == MoveType.Flying)
                 {
                     continue; // 直接跳过，不锁定
                 }

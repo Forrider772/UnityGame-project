@@ -54,7 +54,7 @@ public class UnitAI : MonoBehaviour
         // 优先级3：无敌人 + 路径未走完 → 移动（新增分支）
         else
         {
-            if (attr.unitType == UnitType.Ground)
+            if (attr.moveType == MoveType.Ground)
             {
                 // 地面单位：沿预设路径行走（原有逻辑不变）
                 if (!movement.IsPathCompleted())
@@ -68,7 +68,7 @@ public class UnitAI : MonoBehaviour
                     combat.TryAttack();
                 }
             }
-            else if (attr.unitType == UnitType.Flying)
+            else if (attr.moveType == MoveType.Flying)
             {
                 // 飞行单位：直接直线飞向敌方基地
                 if (!movement.IsFlyingTargetReached(enemyBasePosition))

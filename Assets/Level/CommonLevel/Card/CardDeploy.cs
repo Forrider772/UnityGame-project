@@ -153,18 +153,18 @@ public class CardDeploy : MonoBehaviour
 
     /// <summary>
     /// 从卡牌预制体读取单位移动类型
-    /// 从 unitPrefab 的 UnitAttr 组件获取 unitType，读取失败则默认返回 Ground
+    /// 从 unitPrefab 的 UnitAttr 组件获取 moveType，读取失败则默认返回 Ground
     /// </summary>
     /// <param name="card">卡牌数据</param>
     /// <returns>单位移动类型</returns>
-    private UnitType GetUnitTypeFromCard(CardData card)
+    private MoveType GetMoveTypeFromCard(CardData card)
     {
-        if (card == null || card.unitPrefab == null) return UnitType.Ground;
+        if (card == null || card.unitPrefab == null) return MoveType.Ground;
 
         UnitAttr attr = card.unitPrefab.GetComponent<UnitAttr>();
-        if (attr == null) return UnitType.Ground;
+        if (attr == null) return MoveType.Ground;
 
-        return attr.unitType;
+        return attr.moveType;
     }
 
     /// <summary>
@@ -177,11 +177,11 @@ public class CardDeploy : MonoBehaviour
         if (selectedCard == null || targetPath == null) return;
 
         // 0. 校验单位类型与路径移动类型是否兼容
-        UnitType unitType = GetUnitTypeFromCard(selectedCard);
-        if (!PathMoveTypeHelper.IsPathCompatible(targetPath.moveType, unitType))
+        MoveType unitMoveType = GetMoveTypeFromCard(selectedCard);
+        if (!MoveTypeHelper.IsPathCompatible(targetPath.moveType, unitMoveType))
         {
             Debug.LogWarning(
-                $"无法部署！单位 [{selectedCard.cardName}] 类型为 {unitType}，" +
+                $"无法部署！单位 [{selectedCard.cardName}] 类型为 {unitMoveType}，" +
                 $"路径 [{targetPath.pathId}] 类型为 {targetPath.moveType}，类型不兼容");
             ExitDeployMode();
             CardManager.Instance.DeselectCurrentCard();

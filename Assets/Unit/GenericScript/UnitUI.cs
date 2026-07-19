@@ -48,7 +48,7 @@ public class UnitUI : MonoBehaviour
         hpBar.SetMaxHp(attr.maxHp);
 
         // ✅ 新增：飞行单位血条位置调整
-        if (attr.unitType == UnitType.Flying)
+        if (attr.moveType == MoveType.Flying)
         {
             // 飞行单位血条显示在更高的位置
             hpBar.offset = new Vector3(0, 2f, 0);
