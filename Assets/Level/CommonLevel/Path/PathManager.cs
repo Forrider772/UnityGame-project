@@ -4,11 +4,10 @@ using UnityEngine;
 /// <summary>
 /// 路径数据管理类
 /// 维护一条路线的所有路径点、所属阵营、路线ID等数据
-/// 集成了 PathVisualManager 用于运行时可视化和交互反馈
+/// 通过子物体 PathVisualManager 实现运行时可视化和交互反馈
 /// 支持 Centripetal Catmull-Rom 曲线（可选）
 /// </summary>
 [SelectionBase]
-[RequireComponent(typeof(PathVisualManager))]
 public partial class PathManager : MonoBehaviour
 {
     [Header("基础配置")]
@@ -51,7 +50,9 @@ public partial class PathManager : MonoBehaviour
 
     private void Awake()
     {
-        visualManager = GetComponent<PathVisualManager>();
+        visualManager = GetComponentInChildren<PathVisualManager>();
+        if (visualManager == null)
+            Debug.LogWarning($"PathManager [{camp}] {pathId}: 未找到子物体 PathVisualManager，路径将不可见", this);
         BuildCurveData();
     }
 
@@ -89,10 +90,12 @@ public partial class PathManager : MonoBehaviour
         Vector2[] waypoints = GetWaypoints2D();
 
         // 初始化视觉管理器
-        visualManager.Initialize(waypoints);
-
-        // 初始时隐藏路线（未进入部署模式）
-        visualManager.SetVisible(false);
+        if (visualManager != null)
+        {
+            visualManager.Initialize(waypoints);
+            // 初始时隐藏路线（未进入部署模式）
+            visualManager.SetVisible(false);
+        }
     }
 
     /// <summary>
@@ -111,6 +114,15 @@ public partial class PathManager : MonoBehaviour
     {
         if (visualManager != null)
             visualManager.SetHighlight(highlight);
+    }
+
+    /// <summary>
+    /// 设置路线透明度（由 GarrisonPointPlacer 调用）
+    /// </summary>
+    public void SetAlpha(float alpha)
+    {
+        if (visualManager != null)
+            visualManager.SetAlpha(alpha);
     }
 
     /// <summary>

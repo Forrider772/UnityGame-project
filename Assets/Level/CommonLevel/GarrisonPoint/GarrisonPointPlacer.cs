@@ -151,8 +151,7 @@ public class GarrisonPointPlacer : MonoBehaviour
         foreach (var path in allPaths)
         {
             path.SetVisible(true);
-            PathVisualManager pvm = path.GetComponent<PathVisualManager>();
-            if (pvm != null) pvm.SetAlpha(routeAlpha);
+            path.SetAlpha(routeAlpha);
         }
 
         isDeploying = true;
@@ -196,9 +195,7 @@ public class GarrisonPointPlacer : MonoBehaviour
             if (path != null)
             {
                 path.SetVisible(false);
-                // 恢复不透明度
-                PathVisualManager pvm = path.GetComponent<PathVisualManager>();
-                if (pvm != null) pvm.SetAlpha(1f);
+                path.SetAlpha(1f);
             }
         }
 

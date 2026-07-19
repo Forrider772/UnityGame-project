@@ -2410,12 +2410,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cardParent: {fileID: 2841200226815473414}
-  cardPrefab: {fileID: 3327544750186590502, guid: af4c7fe53dfa99548826d09246d97176, type: 3}
+  cardPrefab: {fileID: 6622286705558164340, guid: 6bec2f0a36b4c0b4ab2c64760e64adbf, type: 3}
   playerDeck:
     carryCards:
-    - {fileID: 11400000, guid: b65ee3fe7725c5244a3d0e77c47cdec9, type: 2}
-    - {fileID: 11400000, guid: ec502278ac8015241a752df726417e3d, type: 2}
-    - {fileID: 11400000, guid: b65ee3fe7725c5244a3d0e77c47cdec9, type: 2}
+    - {fileID: 11400000, guid: e0e84079765e3bb418b4515ac05591b6, type: 2}
+    - {fileID: 11400000, guid: cbe1ca9d0de899348b8dbc3ffdb7c67d, type: 2}
+    - {fileID: 11400000, guid: 8ef732906e29aaa44a45107177c95e36, type: 2}
   CurrentSelected: {fileID: 0}
 --- !u!114 &7269438329259942628
 MonoBehaviour:
@@ -3506,7 +3506,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   waveGenerator: {fileID: 5587550707459024572}
-  waveList: {fileID: 11400000, guid: a94f804c070544a4a820d1c305d6119b, type: 2}
+  waveList: {fileID: 11400000, guid: b40f96da4c50b2b45b8fb8c4f46aaca9, type: 2}
   playerTower: {fileID: 0}
   enemyTower: {fileID: 0}
   playerTowerAlive: 1

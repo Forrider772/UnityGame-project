@@ -18,7 +18,7 @@ MonoBehaviour:
   - unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
     spawnPoint: {fileID: 0}
     pathID: 0
-    spawnCount: 4
+    spawnCount: 2
     spawnInterval: 2
     triggerType: 0
     delayBeforeStart: 0
