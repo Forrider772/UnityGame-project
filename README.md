@@ -234,16 +234,16 @@ AttackingTower ──┬── tower 被毁 ───► Moving
 | `spawnCount` | 本波总生成数量 |
 | `spawnInterval` | 每个单位之间的生成间隔（秒） |
 | `triggerType` | 触发方式（见下方） |
-| `delayBeforeStart` | 仅 `AfterPrevious` 模式生效，延迟秒数 |
+| `delayBeforeStart` | 满足触发条件后的额外延迟秒数（适用于所有触发类型） |
 
 ### 触发类型说明
 
 | 类型 | 行为 |
 |------|------|
-| `AfterPrevious` | 等上一波生成完毕 + 本波 `delayBeforeStart` 秒后开始 |
-| `Concurrent` | 遍历到本波时立即开始，与前一波并发出怪 |
-| `Manual` | 等待外部调用 `WaveGenerator.Continue()` 后开始 |
-| `AllUnitsDead` | 等场上所有已生成单位全部死亡后开始 |
+| `AfterPrevious` | 等上一波生成完毕后，经 `delayBeforeStart` 秒开始 |
+| `Concurrent` | 遍历到本波时经 `delayBeforeStart` 秒后开始，与前一波并发出怪 |
+| `Manual` | 等待外部调用 `WaveGenerator.Continue()` 后，经 `delayBeforeStart` 秒开始 |
+| `AllUnitsDead` | 等场上所有已生成单位全部死亡后，经 `delayBeforeStart` 秒开始 |
 
 ### 使用方式
 

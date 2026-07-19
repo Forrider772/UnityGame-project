@@ -87,6 +87,7 @@ public class WaveGenerator : MonoBehaviour
             // 并发波次由前一个非并发波次连带启动；此处只处理列表开头就是并发的情况
             if (wave.triggerType == WaveTriggerType.Concurrent)
             {
+                yield return new WaitForSeconds(wave.delayBeforeStart);
                 StartCoroutine(SpawnOneWave(wave, index));
                 index++;
                 continue;
@@ -101,12 +102,14 @@ public class WaveGenerator : MonoBehaviour
                     break;
                 case WaveTriggerType.AfterPrevious:
                     yield return new WaitWhile(() => AnyPreviousWaveStillSpawning(index));
-                    yield return new WaitForSeconds(wave.delayBeforeStart);
                     break;
                 case WaveTriggerType.AllUnitsDead:
                     yield return new WaitWhile(() => AnyTrackedUnitStillAlive());
                     break;
             }
+
+            // 统一应用 delayBeforeStart（适用于所有触发类型）
+            yield return new WaitForSeconds(wave.delayBeforeStart);
 
             // 启动当前波次
             int anchor = index;
@@ -117,6 +120,7 @@ public class WaveGenerator : MonoBehaviour
             while (index < waveCount && waveList.waves[index].triggerType == WaveTriggerType.Concurrent)
             {
                 CurrentWaveIndex = index;
+                yield return new WaitForSeconds(waveList.waves[index].delayBeforeStart);
                 StartCoroutine(SpawnOneWave(waveList.waves[index], index));
                 index++;
             }

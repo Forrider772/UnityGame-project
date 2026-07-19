@@ -25,7 +25,7 @@ public class WaveData
     public WaveTriggerType triggerType = WaveTriggerType.AfterPrevious;
 
     [Header("延迟设置")]
-    [Tooltip("[仅 AfterPrevious 模式生效] 本波次延迟多少秒后开始生成")]
+    [Tooltip("本波次在满足触发条件后，额外延迟多少秒再开始生成（适用于所有触发类型）")]
     public float delayBeforeStart = 2f;
 
 }

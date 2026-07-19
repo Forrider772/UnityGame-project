@@ -1,22 +1,16 @@
 # 项目待办事项
 
+
+
+# 并发波次延迟
+# 补充完整战斗系统
+# 层级问题
+
+
+
+
 > 基于 2026-07-13 项目状态梳理，按优先级排序。
 
----
-
-## 🔴 高优先级 — 核心玩法缺失
-
-### 1. CardData ScriptableObject 资产缺失
-
-**现状：** 8 个兵种预制体（soldier/hound/Mechs/Enemy2/Archer/Mage/FlyingUnit/Healer）已存在，但仅 `Assets/Level/LevelTest/` 下有测试用的 `1.asset` 和 `2.asset` 两个 CardData 资产。正式关卡（Level_1~5）完全没有对应的 CardData 资产文件。
-
-**影响：** `CardManager` 无法生成卡牌 UI，卡牌部署流程完全不可用。当前 `PlayerDeck.carryCards` 为空列表。
-
-**需要：**
-- [ ] 为每个兵种创建对应的 CardData 资产（`Create → Battle → Card Data`）
-- [ ] 配置 camp、cardID、cardName、cost、cooldown、icon、unitPrefab
-- [ ] 参考 `Assets/UI/` 下的兵种图片为 icon 字段赋值
-- [ ] 为敌方也创建对应的 CardData（如果敌方需要卡牌系统）
 
 ### 2. 关卡注册不完整 + Level_4/5 为空壳场景
 
