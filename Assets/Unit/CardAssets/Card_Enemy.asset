@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1c3b8b2baa9c6c2468316775bd6d2516, type: 3}
-  m_Name: Card_Enemy_2
+  m_Name: Card_Enemy
   m_EditorClassIdentifier: 
   camp: 1
-  cardID: Enemy_2
+  cardID: Enemy
   cardName: "\u654C\u65B9\u6B65\u5175"
   cost: 0
   cooldown: 0
