@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -14,13 +16,36 @@ using UnityEngine;
 [RequireComponent(typeof(UnitUI))]
 public class UnitBrain : MonoBehaviour
 {
-    [Header("调试")]
-    public UnitState state = UnitState.Moving;
+    [Header("=== 调试（只读） ===")]
+    [Tooltip("当前状态。运行时查看，请勿手动修改")]
+    [SerializeField] private UnitState _state = UnitState.Moving;
+
+    public UnitState state
+    {
+        get => _state;
+        private set
+        {
+            if (_state == value) return;
+            UnitState old = _state;
+            _state = value;
+            OnStateChanged?.Invoke(old, _state);
+        }
+    }
 
     private UnitAttr attr;
     private UnitUI ui;
     private IMoveStrategy moveStrategy;
     private ICombatStrategy combatStrategy;
+
+    // ==================== 事件系统（供音效/特效/UI 挂载） ====================
+    public event Action<UnitState, UnitState> OnStateChanged;  // (旧状态, 新状态)
+    public event Action<GameObject> OnDeath;                    // 死亡前触发
+    public event Action<float, AttackType> OnDamageTaken;       // 受到伤害
+    public event Action OnAttackHit;                            // 攻击命中
+    public event Action OnMoveStart;                            // 开始移动
+    public event Action OnPathComplete;                         // 路径走完
+
+    // ==================== Unity 生命周期 ====================
 
     void Awake()
     {
@@ -37,15 +62,10 @@ public class UnitBrain : MonoBehaviour
         attr.currentHp = attr.maxHp;
     }
 
-    void Start()
-    {
-        // UnitUI 在 Start 中初始化血条（需要 battleCanvas），UnitBrain 不干预
-    }
-
     void Update()
     {
         // 终端状态不执行任何逻辑
-        if (state == UnitState.Dead) return;
+        if (_state == UnitState.Dead) return;
 
         // 死亡判定
         if (attr.currentHp <= 0)
@@ -55,25 +75,21 @@ public class UnitBrain : MonoBehaviour
         }
 
         // ====== 驻扎中：检测敌人 → 立刻离开驻扎投入战斗 ======
-        if (state == UnitState.Garrisoned)
+        if (_state == UnitState.Garrisoned)
         {
             if (combatStrategy != null)
             {
                 Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
                 if (enemy != null)
-                {
                     LeaveGarrison();
-                    state = UnitState.Fighting;
-                }
             }
-            // 驻扎中不执行其他逻辑
             return;
         }
 
         // ====== 状态机主循环 ======
         if (combatStrategy == null || moveStrategy == null) return;
 
-        switch (state)
+        switch (_state)
         {
             case UnitState.Moving:
                 UpdateMoving();
@@ -110,7 +126,7 @@ public class UnitBrain : MonoBehaviour
         // 检测驻扎点/资源点
         if (TryGarrisonInteraction()) return;
 
-        // 检测敌方塔是否在攻击范围内（不再要求路径走完）
+        // 检测敌方塔是否在攻击范围内
         if (TryTargetTower()) return;
 
         // 路径未走完 → 继续移动
@@ -120,7 +136,8 @@ public class UnitBrain : MonoBehaviour
             return;
         }
 
-        // 路径已走完 → 停在终点，等待塔进入攻击范围（通过 TryTargetTower 触发）
+        // 路径已走完 → 触发事件，停在终点
+        OnPathComplete?.Invoke();
     }
 
     /// <summary>
@@ -150,7 +167,6 @@ public class UnitBrain : MonoBehaviour
             return;
         }
 
-        // 超出攻击范围 → 回 Moving 继续走路（或追击塔）
         float dist = Vector2.Distance(transform.position, combatStrategy.CurrentTarget.position);
         if (dist > attr.atkRange)
         {
@@ -164,9 +180,6 @@ public class UnitBrain : MonoBehaviour
 
     // ==================== 塔检测 ====================
 
-    /// <summary>
-    /// 检测敌方塔是否在攻击范围内，在则锁定并切入 AttackingTower
-    /// </summary>
     bool TryTargetTower()
     {
         GameObject tower = attr.camp == CampType.Player
@@ -191,10 +204,6 @@ public class UnitBrain : MonoBehaviour
 
     // ==================== 驻扎交互 ====================
 
-    /// <summary>
-    /// 检测是否进入驻扎点/资源点范围，成功交互返回 true
-    /// 逻辑与原 UnitAI.TryHandleGarrisonPoint / TryHandleResourcePoint 完全一致
-    /// </summary>
     bool TryGarrisonInteraction()
     {
         // 驻扎点检测
@@ -243,6 +252,7 @@ public class UnitBrain : MonoBehaviour
 
     /// <summary>
     /// 脱离驻扎（发现敌人时自动调用）
+    /// 先检测敌人是否存在再决定跳转状态，避免 Fighting→Moving 无意义切换
     /// </summary>
     void LeaveGarrison()
     {
@@ -254,6 +264,18 @@ public class UnitBrain : MonoBehaviour
             attr.garrisonedGarrisonPoint.RemoveGarrison(gameObject);
 
         moveStrategy?.Resume();
+
+        // 先检测敌人是否存在，再决定状态
+        Transform enemy = combatStrategy?.DetectTarget(attr, transform.position);
+        state = enemy != null ? UnitState.Fighting : UnitState.Moving;
+    }
+
+    // ==================== 事件触发方法 ====================
+
+    /// <summary>由 CombatStrategy 在 DealDamage 命中时调用</summary>
+    public void NotifyAttackHit()
+    {
+        OnAttackHit?.Invoke();
     }
 
     // ==================== 外部公共 API ====================
@@ -267,6 +289,12 @@ public class UnitBrain : MonoBehaviour
         if (combatStrategy == null) return;
         combatStrategy.TakeDamage(damage, type, attr, Die);
         ui.RefreshHp(attr.currentHp);
+
+        // 受击反馈
+        OnDamageTaken?.Invoke(damage, type);
+        GetComponent<UnitVisual>()?.FlashRed();
+
+        // 攻击者事件（当此单位被作为"攻击命中"时由 DealDamage 侧触发 OnAttackHit）
     }
 
     /// <summary>
@@ -279,7 +307,7 @@ public class UnitBrain : MonoBehaviour
 
     /// <summary>
     /// 设置移动路径，并将单位定位到路径上距 worldPosition 最近的点
-    /// （供 InitialUnitPlacer 等初始布阵系统调用，避免单位从路径外传送回起点）
+    /// （供 InitialUnitPlacer 等初始布阵系统调用）
     /// </summary>
     public void SetPathFromPosition(PathManager path, Vector3 worldPosition)
     {
@@ -302,12 +330,41 @@ public class UnitBrain : MonoBehaviour
         moveStrategy?.Resume();
     }
 
-    // ==================== 内部方法 ====================
+    // ==================== 死亡序列 ====================
 
     void Die()
     {
+        if (_state == UnitState.Dead) return;
         state = UnitState.Dead;
+
+        // 事件通知（音效、任务系统等监听）
+        OnDeath?.Invoke(gameObject);
+
+        // 立即禁用碰撞（停止物理交互）
+        var col = GetComponent<Collider2D>();
+        if (col) col.enabled = false;
+
+        // 启动死亡序列协程
+        StartCoroutine(DeathSequence());
+    }
+
+    IEnumerator DeathSequence()
+    {
         ui.DestroyHpBar();
+
+        // 0.3s 淡出
+        var sr = GetComponent<SpriteRenderer>();
+        if (sr)
+        {
+            float t = 0;
+            while (t < 0.3f)
+            {
+                t += Time.deltaTime;
+                sr.color = new Color(1, 1, 1, 1 - t / 0.3f);
+                yield return null;
+            }
+        }
+
         Destroy(gameObject);
     }
 }
