@@ -14,15 +14,12 @@ using UnityEngine;
 public abstract class BaseCombatStrategy : MonoBehaviour, ICombatStrategy
 {
     // ==================== 攻击间隔配置 ====================
-    [Header("=== 攻击间隔 ===")]
-    [Tooltip("基础攻击间隔（秒），Awake 时自动从 UnitAttr.atkCD 读取，此处为回退值")]
-    [SerializeField] protected float baseAttackInterval = 1f;
-
-    [Tooltip("前摇时长（攻速×1.0 时），伤害发生前的准备时间，前摇期间目标丢失则取消攻击")]
+    [Header("=== 攻击动画时长（攻速×1.0 时） ===")]
+    [Tooltip("前摇时长（秒），伤害发生前的准备时间，前摇期间目标丢失则取消攻击")]
     [SerializeField] protected float baseWindup = 0.15f;
 
-    [Tooltip("后摇时长（攻速×1.0 时），伤害后的收招时间，不可中断")]
-    [SerializeField] protected float baseRecovery = 0.35f;
+    [Tooltip("后摇时长（秒），伤害后的收招时间，不可中断。暂为 0 方便调试攻击间隔")]
+    [SerializeField] protected float baseRecovery = 0f;
 
     // ==================== 索敌配置 ====================
     [Header("=== 索敌 ===")]
@@ -30,7 +27,15 @@ public abstract class BaseCombatStrategy : MonoBehaviour, ICombatStrategy
     [SerializeField] protected float detectInterval = 0.2f;
 
     // ==================== 运行时状态 ====================
-    protected float attackSpeedMul = 1f;              // 攻速系数（buff 接口修改）
+    private float _attackInterval = 1f;               // 缓存自 UnitAttr.atkCD
+
+    // ==================== 攻速调试 ====================
+    [Header("=== 攻速调试 ===")]
+    [Tooltip("攻速系数：1.0=正常速度，2.0=双倍速。修改即生效")]
+    [SerializeField] protected float attackSpeedMul = 1f;
+
+    [Tooltip("当前有效间隔 = atkCD / 攻速系数（只读）")]
+    [SerializeField] protected float effectiveIntervalDebug;
     protected AttackPhase phase = AttackPhase.Idle;
     protected float phaseTimer;
     protected float detectTimer;
@@ -47,7 +52,7 @@ public abstract class BaseCombatStrategy : MonoBehaviour, ICombatStrategy
     }
 
     // ==================== 动态属性（攻速缩放） ====================
-    protected float EffectiveInterval => baseAttackInterval / attackSpeedMul;
+    protected float EffectiveInterval => _attackInterval / attackSpeedMul;
     protected float WindupDuration    => baseWindup    / attackSpeedMul;
     protected float RecoveryDuration  => baseRecovery  / attackSpeedMul;
     protected float IdleWaitDuration  => Mathf.Max(0f, EffectiveInterval - WindupDuration - RecoveryDuration);
@@ -61,11 +66,14 @@ public abstract class BaseCombatStrategy : MonoBehaviour, ICombatStrategy
     {
         var selfAttr = GetComponent<UnitAttr>();
         if (selfAttr != null)
-            baseAttackInterval = selfAttr.atkCD;
+            _attackInterval = selfAttr.atkCD;
     }
 
     protected virtual void Update()
     {
+        // 同步 Inspector 调试显示
+        effectiveIntervalDebug = EffectiveInterval;
+
         // 推进攻击阶段机
         if (phase != AttackPhase.Idle)
             UpdateAttackPhase();
