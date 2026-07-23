@@ -27,6 +27,12 @@ public class Bullet : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+        TowerBase targetTower = target.GetComponent<TowerBase>();
+        if (targetTower != null && targetTower.hp <= 0)
+        {
+            Destroy(gameObject);
+            return;
+        }
 
         // 飞向目标
         Vector3 direction = (target.position - transform.position).normalized;

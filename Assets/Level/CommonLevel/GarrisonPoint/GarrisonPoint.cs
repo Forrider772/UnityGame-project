@@ -348,7 +348,7 @@ public class GarrisonPoint : MonoBehaviour
         return _garrisonedUnits.Contains(unit);
     }
 
-    void OnDrawGizmosSelected()
+    void OnDrawGizmos()
     {
         // 编辑器下使用 transform.position（运行时用 worldPosition）
         Vector3 pos = Application.isPlaying ? (Vector3)worldPosition : transform.position;

@@ -136,6 +136,9 @@ public class UnitBrain : MonoBehaviour
             return;
         }
 
+        // 路径已走完 → 以敌方塔为目标点直接走过去
+        if (TryWalkToTower()) return;
+
         // 路径已走完 → 触发事件，停在终点
         OnPathComplete?.Invoke();
     }
@@ -200,6 +203,24 @@ public class UnitBrain : MonoBehaviour
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// 路径走完后，直接以塔为目标点行走, 是目前的冗余保险
+    /// </summary>
+    bool TryWalkToTower()
+    {
+        GameObject tower = attr.camp == CampType.Player
+            ? BattleManager.Instance.enemyTower
+            : BattleManager.Instance.playerTower;
+
+        if (tower == null) return false;
+
+        transform.position = Vector2.MoveTowards(
+            transform.position,
+            tower.transform.position,
+            attr.moveSpeed * Time.deltaTime);
+        return true;
     }
 
     // ==================== 驻扎交互 ====================

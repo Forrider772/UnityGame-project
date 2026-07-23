@@ -163,13 +163,22 @@ public abstract class BaseCombatStrategy : MonoBehaviour, ICombatStrategy
     protected abstract Transform PerformDetection(UnitAttr attr, Vector2 position);
 
     /// <summary>
-    /// 轻量验证目标是否仍有效
+    /// 轻量验证目标是否仍有效（单位或防御塔）
     /// </summary>
     protected bool IsTargetValid(Transform target)
     {
         if (target == null) return false;
+
+        // 检查是否为敌方单位
         UnitAttr ta = target.GetComponent<UnitAttr>();
-        return ta != null && ta.currentHp > 0;
+        if (ta != null) return ta.currentHp > 0;
+
+        // 检查是否为防御塔
+        TowerBase tower = target.GetComponent<TowerBase>();
+        if (tower != null) return tower.hp > 0;
+
+        // 目标既不是单位也不是塔 → 无效
+        return false;
     }
 
     // ==================== TryExecute（模板方法） ====================
@@ -256,4 +265,20 @@ public abstract class BaseCombatStrategy : MonoBehaviour, ICombatStrategy
     public void AddSpeedBonus(float multiplier) => attackSpeedMul *= multiplier;
     public void RemoveSpeedBonus(float multiplier) => attackSpeedMul /= multiplier;
     public void ResetAttackSpeed() => attackSpeedMul = 1f;
+
+    // ==================== 编辑器范围可视化 ====================
+
+    private void OnDrawGizmos()
+    {
+        var attr = GetComponent<UnitAttr>();
+        if (attr == null) return;
+
+        // 攻击范围 — 红色
+        Gizmos.color = new Color(1f, 0.25f, 0.1f, 0.5f);
+        Gizmos.DrawWireSphere(transform.position, attr.atkRange);
+
+        // 索敌范围 — 蓝色
+        Gizmos.color = new Color(0.15f, 0.45f, 1f, 0.35f);
+        Gizmos.DrawWireSphere(transform.position, attr.detectRange);
+    }
 }

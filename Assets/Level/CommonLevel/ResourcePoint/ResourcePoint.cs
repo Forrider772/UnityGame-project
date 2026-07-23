@@ -277,7 +277,7 @@ public class ResourcePoint : MonoBehaviour
         return _garrisonedUnits.Contains(unit);
     }
 
-    void OnDrawGizmosSelected()
+    void OnDrawGizmos()
     {
         Gizmos.color = _occupyingCamp == null ? Color.gray
             : _occupyingCamp == CampType.Player ? Color.green : Color.red;
