@@ -2,43 +2,18 @@
 
 
 
-# 并发波次延迟
 # 补充完整战斗系统
-# 层级问题
+**现状：**
+飞行单位会往回走追击敌人，可选择改为不在追击敌人（遇到敌人攻击，敌人离开后继续移动）。
+单位的攻击范围提示。
+资源点和驻扎点的显示
+
+# 左右反转朝向
 
 
 
 
 > 基于 2026-07-13 项目状态梳理，按优先级排序。
-
-
-### 2. 关卡注册不完整 + Level_4/5 为空壳场景
-
-**现状：**
-- [SaveManager.cs:18](Assets/Save/SaveManager.cs#L18) 中 `levelSceneOrder` 只包含 `{ "Level_1", "Level_2" }`
-- `EditorBuildSettings.asset` 也只包含 MenuScene/GameStart/Test/DialogueScene/TestLevelScene/Level_1/Level_2，**Level_3~5 不在 Build Settings 中**
-- Level_4.unity 和 Level_5.unity 仅 ~5.8 KB（对比 Level_1 的 189 KB、Level_2 的 198 KB、Level_3 的 172 KB），**基本为空壳**
-- **Level_5 缺少 `WaveList_Level_5.asset` 波次配置资产**
-
-**影响：** Level_3~5 在构建后会缺失，Level_4/5 即使加入也没有实际内容。
-
-**需要：**
-- [ ] 将 `levelSceneOrder` 更新为 `{ "Level_1", "Level_2", "Level_3", "Level_4", "Level_5" }`
-- [ ] 将 Level_3~5 加入 `File → Build Settings → Scenes In Build`
-- [ ] 为 Level_4、Level_5 搭建实际关卡内容（LevelSetup、双塔、路径、资源点等）
-- [ ] 为 Level_5 创建 `WaveList_Level_5.asset` 波次配置
-- [ ] 确认 Level_3 场景配置完整可用
-
-### 3. 敌方 AI 部署系统缺失
-
-**现状：** 敌方只能通过 `WaveGenerator` 按固定波次配置生成单位，没有类似玩家的卡牌/费用/主动部署机制。
-
-**影响：** 敌方行为完全预设，缺乏动态对抗性。不符合"卡牌驱动单位部署"的对称设计理念。
-
-**需要：**
-- [ ] 设计敌方 AI 部署逻辑（基于费用 + 定时/条件触发）
-- [ ] 或保持波次系统但增加敌方动态反应（如：检测玩家部署后反制出牌）
-- [ ] 敌方 ResourcePoint 占领后的费用使用策略
 
 ### 4. GameHUD 与游戏数据未绑定
 
@@ -178,14 +153,7 @@
 - [ ] 暂停面板中增加返回主菜单按钮
 - [ ] 暂停时禁用卡牌点击和部署操作
 
-### 19. 卡牌手牌上限/抽牌机制
 
-**现状：** `CardManager` 一次性生成所有卡牌并始终可用（冷却除外）。
-
-**可选扩展：**
-- [ ] 手牌上限（如最多 5 张在手）
-- [ ] 抽牌堆/弃牌堆循环机制
-- [ ] 每 N 秒自动抽一张牌
 
 ---
 
