@@ -142,7 +142,7 @@ public void TakeDamage(float dmg)
     }
 
     // 编辑器中绘制攻击范围辅助线
-    private void OnDrawGizmosSelected()
+    private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, atkRange);

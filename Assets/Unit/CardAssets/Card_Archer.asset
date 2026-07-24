@@ -17,5 +17,5 @@ MonoBehaviour:
   cardName: "\u5C04\u624B"
   cost: 4
   cooldown: 4
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 1473c34292103f04cb9343f1212f8a13, type: 3}
   unitPrefab: {fileID: 6656251850606900385, guid: 7d60d6ee712e20841b304ab7ed2f96d6, type: 3}

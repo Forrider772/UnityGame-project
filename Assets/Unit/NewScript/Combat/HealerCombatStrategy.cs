@@ -1,133 +1,110 @@
-using System;
-using System.Linq;
 using UnityEngine;
 
 /// <summary>
-/// 治疗战斗策略 —— 寻找血量最低的友方单位并进行治疗
-/// 实现 ICombatStrategy，无目标时返回 null 让 UnitBrain 切换到 Moving 状态
+/// 治疗战斗策略
+/// 继承 BaseCombatStrategy，寻找血量百分比最低的友方单位进行治疗。
+/// 治疗师不攻击防御塔。
 /// </summary>
-public class HealerCombatStrategy : MonoBehaviour, ICombatStrategy
+public class HealerCombatStrategy : BaseCombatStrategy
 {
-    [Header("治疗配置")]
+    [Header("=== 治疗属性 ===")]
+    [Tooltip("每次治疗量")]
     public float healAmount = 25f;
+
+    [Tooltip("治疗范围：搜索受伤友方的距离")]
     public float healRange = 10f;
-    public float healCooldown = 2f;
+
+    [Header("=== 治疗特效 ===")]
+    [Tooltip("治疗特效预制体，在目标位置生成")]
     public GameObject healEffectPrefab;
+
+    [Tooltip("特效生成高度偏移")]
     public float effectHeightOffset = 2f;
+
+    [Header("=== 治疗策略 ===")]
+    [Tooltip("是否可以治疗自己")]
     public bool canHealSelf = true;
 
-    private float healTimer;
-
-    public Transform CurrentTarget { get; private set; }
-
-    void Awake()
+    protected override Transform PerformDetection(UnitAttr attr, Vector2 position)
     {
-        healTimer = healCooldown; // 初始就可以治疗
-    }
+        LayerMask allyMask = attr.camp == CampType.Player
+            ? LayerMask.GetMask("PlayerUnit")
+            : LayerMask.GetMask("EnemyUnit");
 
-    // ==================== ICombatStrategy 实现 ====================
+        Collider2D[] hits = Physics2D.OverlapCircleAll(position, healRange, allyMask);
 
-    /// <summary>
-    /// 寻找血量百分比最低的友方单位
-    /// 无治疗目标时返回 null（让 UnitBrain 走 Moving 状态）
-    /// </summary>
-    public Transform DetectTarget(UnitAttr attr, Vector2 position)
-    {
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(position, healRange);
-
-        Transform lowestHpTarget = null;
+        Transform best = null;
         float lowestHpPercent = 1f;
 
-        foreach (var collider in colliders)
+        foreach (var hit in hits)
         {
-            // 可选：不治疗自己
-            if (!canHealSelf && collider.transform == transform) continue;
+            if (hit == null) continue;
+            if (!canHealSelf && hit.transform == transform) continue;
 
-            UnitAttr allyAttr = collider.GetComponent<UnitAttr>();
-            if (allyAttr != null && allyAttr.currentHp > 0 && allyAttr.camp == attr.camp)
+            UnitAttr allyAttr = hit.GetComponent<UnitAttr>();
+            if (allyAttr == null || allyAttr.currentHp <= 0) continue;
+            if (allyAttr.camp != attr.camp) continue;
+
+            float hpPercent = allyAttr.currentHp / allyAttr.maxHp;
+            if (hpPercent < lowestHpPercent && hpPercent < 0.99f)
             {
-                float hpPercent = allyAttr.currentHp / allyAttr.maxHp;
-                // 只治疗血量低于 99% 的（避免满血浪费）
-                if (hpPercent < lowestHpPercent && hpPercent < 0.99f)
-                {
-                    lowestHpPercent = hpPercent;
-                    lowestHpTarget = collider.transform;
-                }
+                lowestHpPercent = hpPercent;
+                best = hit.transform;
             }
         }
 
-        CurrentTarget = lowestHpTarget;
-        return CurrentTarget;
+        return best;
     }
 
     /// <summary>
-    /// 执行治疗（面向目标旋转 + 冷却计时 + 治疗）
-    /// 返回 true 表示执行了治疗行动
+    /// 重写 TryExecute：用 healRange 代替 atkRange 做距离判定
     /// </summary>
-    public bool TryExecute(Transform target, float deltaTime, UnitAttr attr,
-                           Vector2 position, IMoveStrategy movement)
+    public override bool TryExecute(Transform target, float deltaTime, UnitAttr attr,
+                                    Vector2 position, IMoveStrategy movement)
     {
         if (target == null) return false;
+        if (phase != AttackPhase.Idle) return false;
 
-        // 面向治疗目标旋转
-        Vector3 dir = (target.position - (Vector3)position).normalized;
-        if (dir != Vector3.zero)
-            transform.rotation = Quaternion.Lerp(transform.rotation,
-                Quaternion.LookRotation(Vector3.forward, new Vector3(dir.x, dir.y, 0)),
-                10f * deltaTime);
+        float distance = Vector2.Distance(position, target.position);
 
-        // 冷却计时
-        healTimer -= deltaTime;
-        if (healTimer <= 0)
+        if (distance > healRange)
         {
-            HealTarget(target, attr);
-            healTimer = healCooldown;
+            movement.MoveToward(target.position, attr.moveSpeed);
             return true;
         }
 
-        return false; // 在冷却中
+        phase = AttackPhase.Windup;
+        phaseTimer = WindupDuration;
+        return true;
     }
 
-    public void SetTowerTarget(UnitAttr attr)
+    protected override void ExecuteAttack(Transform target)
     {
-        // 治疗师不攻击塔，清空目标
-        CurrentTarget = null;
+        HealTarget(target);
     }
 
-    public void TakeDamage(float damage, AttackType type, UnitAttr attr, Action onDie)
-    {
-        float finalDmg = damage;
-
-        if (type == AttackType.Physical)
-            finalDmg = Mathf.Max(1f, damage - attr.physicalDefense);
-        else if (type == AttackType.Magic)
-            finalDmg = Mathf.Max(1f, damage - attr.magicDefense);
-
-        attr.currentHp -= finalDmg;
-
-        if (attr.currentHp <= 0)
-            onDie?.Invoke();
-    }
-
-    // ==================== 内部方法 ====================
-
-    void HealTarget(Transform target, UnitAttr selfAttr)
+    private void HealTarget(Transform target)
     {
         UnitAttr targetAttr = target.GetComponent<UnitAttr>();
         if (targetAttr == null) return;
 
         targetAttr.currentHp = Mathf.Min(targetAttr.currentHp + healAmount, targetAttr.maxHp);
 
-        // 刷新目标的血条
         UnitUI targetUI = target.GetComponent<UnitUI>();
         targetUI?.RefreshHp(targetAttr.currentHp);
 
-        // 治疗特效
         if (healEffectPrefab != null)
         {
             Instantiate(healEffectPrefab,
                 target.position + Vector3.up * effectHeightOffset,
                 Quaternion.identity);
         }
+    }
+
+    /// <summary>治疗师不攻击塔</summary>
+    public override void SetTowerTarget(UnitAttr attr)
+    {
+        CurrentTarget = null;
+        CancelAttack();
     }
 }

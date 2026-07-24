@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 5627427938716170364}
   - component: {fileID: 6162369960168322681}
   - component: {fileID: 5283411052699527634}
+  - component: {fileID: 698738914429642143}
   m_Layer: 10
   m_Name: hound
   m_TagString: Untagged
@@ -77,7 +78,7 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 1187708677
-  m_SortingLayer: 3
+  m_SortingLayer: 4
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 956dd6adb2081ee4696a4a1a821f04f1, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -148,18 +149,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   camp: 0
-  maxHp: 100
-  atk: 20
-  moveSpeed: 3
-  atkRange: 1
-  atkCD: 0.9
-  detectRange: 1
-  attackType: 0
-  physicalDefense: 0
-  magicDefense: 0
-  hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
   moveType: 0
   attackRangeType: 0
+  maxHp: 100
+  physicalDefense: 0
+  magicDefense: 0
+  atk: 20
+  attackType: 0
+  atkRange: 1
+  atkCD: 0.9
+  moveSpeed: 3
+  detectRange: 1
+  hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
   currentHp: 0
   isGarrisoned: 0
   garrisonedPoint: {fileID: 0}
@@ -188,7 +189,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 726e5b6cc51c17b49959ef193a3f1805, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  state: 0
+  _state: 0
 --- !u!114 &6162369960168322681
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -213,3 +214,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cece72025651ffe46adf75029a806a26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  baseWindup: 0.15
+  baseRecovery: 0
+  detectInterval: 0.2
+  attackSpeedMul: 1
+  effectiveIntervalDebug: 0
+--- !u!114 &698738914429642143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6656251850606900385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc3efed5fc12c284fb5d3618bccc483c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  flashDuration: 0.1

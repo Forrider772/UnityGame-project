@@ -10,12 +10,12 @@ public enum AttackType
 }
 
 /// <summary>
-/// 攻击距离类型枚举（新增）
+/// 攻击距离类型枚举
 /// </summary>
 public enum AttackRangeType
 {
-    Melee,  // 近战单位（默认值，原有兵种自动继承）
-    Ranged  // 远程单位/防御塔
+    Melee,  // 近战单位
+    Ranged  // 远程单位
 }
 
 /// <summary>
@@ -25,39 +25,54 @@ public enum AttackRangeType
 /// </summary>
 public class UnitAttr : MonoBehaviour
 {
-    [Header("基础战斗属性")]
-    public CampType camp;          // 所属阵营
-    public float maxHp = 120f;     // 最大生命值
-    public float atk = 8f;         // 基础攻击力
-    public float moveSpeed = 1.8f; // 移动速度
-    public float atkRange = 1.2f;  // 普攻攻击范围
-    public float atkCD = 1f;       // 攻击冷却时间
+    [Header("=== 阵营与类型 ===")]
+    [Tooltip("所属阵营：Player（玩家）/ Enemy（敌人）")]
+    public CampType camp;
 
-    [Header("索敌配置")]
-    public float detectRange = 3f; // 大范围搜寻敌人半径
-
-    [Header("防御属性")]
-    public AttackType attackType;  // 自身攻击类型
-    public float physicalDefense = 0f; // 物理防御减伤
-    public float magicDefense = 0f;    // 法术防御减伤
-
-    [Header("UI资源配置")]
-    public GameObject hpBarPrefab; // 血条预制体
-
-    [Header("单位类型配置（新增）")]
-    [Tooltip("单位类型：地面/飞行")]
+    [Tooltip("移动类型：地面沿路径行走 / 飞行沿路径飞行")]
     public MoveType moveType = MoveType.Ground;
-    
-    [Tooltip("攻击类型：近战/远程")]
+
+    [Tooltip("攻击类型：近战（不能打飞行单位）/ 远程（可打所有类型）")]
     public AttackRangeType attackRangeType = AttackRangeType.Melee;
 
-    [HideInInspector]
-    public float currentHp; // 当前运行时血量
+    [Header("=== 生存属性 ===")]
+    [Tooltip("最大生命值")]
+    public float maxHp = 120f;
 
-    [HideInInspector]
-    public bool isGarrisoned;     // 是否处于驻扎状态
-    [HideInInspector]
-    public ResourcePoint garrisonedPoint; // 驻扎的资源点引用
-    [HideInInspector]
-    public GarrisonPoint garrisonedGarrisonPoint; // 驻扎的驻扎点引用（与 garrisonedPoint 互斥）
+    [Tooltip("物理防御：减免物理伤害，最终伤害 = max(1, 伤害 - 防御)")]
+    public float physicalDefense = 0f;
+
+    [Tooltip("法术防御：减免法术伤害，最终伤害 = max(1, 伤害 - 防御)")]
+    public float magicDefense = 0f;
+
+    [Header("=== 攻击属性 ===")]
+    [Tooltip("基础攻击力")]
+    public float atk = 8f;
+
+    [Tooltip("攻击类型（自身造成的伤害类型）：物理 / 法术")]
+    public AttackType attackType;
+
+    [Tooltip("攻击范围：触发攻击的最大距离")]
+    public float atkRange = 1.2f;
+
+    [Tooltip("攻击间隔：两次攻击之间的基础时间（秒），受攻速 buff 影响")]
+    public float atkCD = 1f;
+
+    [Header("=== 移动属性 ===")]
+    [Tooltip("移动速度：沿路径行走的速度")]
+    public float moveSpeed = 1.8f;
+
+    [Header("=== 索敌属性 ===")]
+    [Tooltip("索敌范围：搜索敌人的侦测半径，大于攻击范围")]
+    public float detectRange = 3f;
+
+    [Header("=== UI 配置 ===")]
+    [Tooltip("血条预制体，挂载 HPBar 组件")]
+    public GameObject hpBarPrefab;
+
+    // ==================== 运行时状态（Inspector 隐藏） ====================
+    [HideInInspector] public float currentHp;
+    [HideInInspector] public bool isGarrisoned;
+    [HideInInspector] public ResourcePoint garrisonedPoint;
+    [HideInInspector] public GarrisonPoint garrisonedGarrisonPoint;
 }
