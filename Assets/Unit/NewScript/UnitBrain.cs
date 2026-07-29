@@ -9,8 +9,7 @@ using UnityEngine;
 ///
 /// 行为优先级：
 ///   1. 死亡判定
-///   2. 驻扎中检测敌人 → 脱离驻扎进入战斗
-///   3. 按状态执行：Moving / Fighting / Garrisoned / AttackingTower
+///   2. 按状态执行：Moving / Advancing / Fighting / Garrisoned / AttackingTower
 /// </summary>
 [RequireComponent(typeof(UnitAttr))]
 [RequireComponent(typeof(UnitUI))]
@@ -39,6 +38,8 @@ public class UnitBrain : MonoBehaviour
 
     // ==================== 事件系统（供音效/特效/UI 挂载） ====================
     public event Action<UnitState, UnitState> OnStateChanged;  // (旧状态, 新状态)
+    public event Action<UnitState> OnStateEnter;                // 进入新状态
+    public event Action<UnitState> OnStateExit;                 // 离开旧状态
     public event Action<GameObject> OnDeath;                    // 死亡前触发
     public event Action<float, AttackType> OnDamageTaken;       // 受到伤害
     public event Action OnAttackHit;                            // 攻击命中
@@ -74,18 +75,6 @@ public class UnitBrain : MonoBehaviour
             return;
         }
 
-        // ====== 驻扎中：检测敌人 → 立刻离开驻扎投入战斗 ======
-        if (_state == UnitState.Garrisoned)
-        {
-            if (combatStrategy != null)
-            {
-                Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
-                if (enemy != null)
-                    LeaveGarrison();
-            }
-            return;
-        }
-
         // ====== 状态机主循环 ======
         if (combatStrategy == null || moveStrategy == null) return;
 
@@ -95,23 +84,43 @@ public class UnitBrain : MonoBehaviour
                 UpdateMoving();
                 break;
 
+            case UnitState.Advancing:
+                UpdateAdvancing();
+                break;
+
             case UnitState.Fighting:
                 UpdateFighting();
+                break;
+
+            case UnitState.Garrisoned:
+                UpdateGarrisoned();
                 break;
 
             case UnitState.AttackingTower:
                 UpdateAttackingTower();
                 break;
-
-            case UnitState.Garrisoned:
-                break;
         }
+    }
+
+    // ==================== 统一状态切换 ====================
+
+    /// <summary>
+    /// 统一状态切换入口。检查合法性，触发进入/退出事件。
+    /// </summary>
+    void ChangeState(UnitState newState)
+    {
+        if (_state == UnitState.Dead) return;    // 终端状态不可切出
+        if (_state == newState) return;
+
+        OnStateExit?.Invoke(_state);
+        state = newState;
+        OnStateEnter?.Invoke(_state);
     }
 
     // ==================== 状态更新方法 ====================
 
     /// <summary>
-    /// Moving 状态：沿路径行走，检测敌人/驻扎点/塔
+    /// Moving 状态：沿路径行走，检测敌人/驻扎点
     /// </summary>
     void UpdateMoving()
     {
@@ -119,28 +128,54 @@ public class UnitBrain : MonoBehaviour
         Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
         if (enemy != null)
         {
-            state = UnitState.Fighting;
+            ChangeState(UnitState.Fighting);
             return;
         }
 
         // 检测驻扎点/资源点
         if (TryGarrisonInteraction()) return;
 
-        // 检测敌方塔是否在攻击范围内
-        if (TryTargetTower()) return;
-
         // 路径未走完 → 继续移动
         if (!moveStrategy.IsPathCompleted())
         {
-            moveStrategy.Move(Time.deltaTime, attr.moveSpeed);
+            moveStrategy.Move(Time.deltaTime, attr.ModifiedMoveSpeed);
             return;
         }
 
-        // 路径已走完 → 以敌方塔为目标点直接走过去
-        if (TryWalkToTower()) return;
-
-        // 路径已走完 → 触发事件，停在终点
+        // 路径已走完 → 进入 Advancing（向塔推进）
         OnPathComplete?.Invoke();
+        ChangeState(UnitState.Advancing);
+    }
+
+    /// <summary>
+    /// Advancing 状态：路径已走完，向敌方塔推进
+    /// 优先级：敌人 > 塔
+    /// </summary>
+    void UpdateAdvancing()
+    {
+        // 1. 优先检测敌人
+        Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
+        if (enemy != null)
+        {
+            ChangeState(UnitState.Fighting);
+            return;
+        }
+
+        // 2. 塔在攻击范围内 → 攻击塔
+        if (TryTargetTower()) return;
+
+        // 3. 塔存在但太远 → 向塔推进
+        GameObject tower = attr.camp == CampType.Player
+            ? BattleManager.Instance.enemyTower
+            : BattleManager.Instance.playerTower;
+
+        if (tower != null)
+        {
+            moveStrategy.MoveToward(tower.transform.position, attr.ModifiedMoveSpeed);
+            return;
+        }
+
+        // 4. 塔不存在 → 待机
     }
 
     /// <summary>
@@ -151,7 +186,10 @@ public class UnitBrain : MonoBehaviour
         Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
         if (enemy == null)
         {
-            state = UnitState.Moving;
+            // 敌人消失 → 路径未完则继续走，路径已完则继续推进
+            ChangeState(moveStrategy.IsPathCompleted()
+                ? UnitState.Advancing
+                : UnitState.Moving);
             return;
         }
 
@@ -159,21 +197,34 @@ public class UnitBrain : MonoBehaviour
     }
 
     /// <summary>
+    /// Garrisoned 状态：驻扎中检测敌人
+    /// </summary>
+    void UpdateGarrisoned()
+    {
+        if (combatStrategy != null)
+        {
+            Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
+            if (enemy != null)
+                LeaveGarrison();
+        }
+    }
+
+    /// <summary>
     /// AttackingTower 状态：攻击敌方防御塔
-    /// 塔被毁或超出攻击范围且路径未走完 → 回到 Moving
     /// </summary>
     void UpdateAttackingTower()
     {
         if (combatStrategy.CurrentTarget == null)
         {
-            state = UnitState.Moving;
+            ChangeState(UnitState.Advancing);
             return;
         }
 
         float dist = Vector2.Distance(transform.position, combatStrategy.CurrentTarget.position);
         if (dist > attr.atkRange)
         {
-            state = UnitState.Moving;
+            // 塔超出范围（保险）→ 回到推进
+            ChangeState(UnitState.Advancing);
             return;
         }
 
@@ -183,6 +234,9 @@ public class UnitBrain : MonoBehaviour
 
     // ==================== 塔检测 ====================
 
+    /// <summary>
+    /// 检测敌方塔是否在攻击范围内，在则锁定并切入 AttackingTower
+    /// </summary>
     bool TryTargetTower()
     {
         GameObject tower = attr.camp == CampType.Player
@@ -197,30 +251,12 @@ public class UnitBrain : MonoBehaviour
             combatStrategy.SetTowerTarget(attr);
             if (combatStrategy.CurrentTarget != null)
             {
-                state = UnitState.AttackingTower;
+                ChangeState(UnitState.AttackingTower);
                 return true;
             }
         }
 
         return false;
-    }
-
-    /// <summary>
-    /// 路径走完后，直接以塔为目标点行走, 是目前的冗余保险
-    /// </summary>
-    bool TryWalkToTower()
-    {
-        GameObject tower = attr.camp == CampType.Player
-            ? BattleManager.Instance.enemyTower
-            : BattleManager.Instance.playerTower;
-
-        if (tower == null) return false;
-
-        transform.position = Vector2.MoveTowards(
-            transform.position,
-            tower.transform.position,
-            attr.moveSpeed * Time.deltaTime);
-        return true;
     }
 
     // ==================== 驻扎交互 ====================
@@ -273,7 +309,6 @@ public class UnitBrain : MonoBehaviour
 
     /// <summary>
     /// 脱离驻扎（发现敌人时自动调用）
-    /// 先检测敌人是否存在再决定跳转状态，避免 Fighting→Moving 无意义切换
     /// </summary>
     void LeaveGarrison()
     {
@@ -284,36 +319,22 @@ public class UnitBrain : MonoBehaviour
 
         moveStrategy?.Resume();
 
-        // 先检测敌人是否存在，再决定状态
+        // 先检测敌人是否存在，再决定目标状态
         Transform enemy = combatStrategy?.DetectTarget(attr, transform.position);
-        state = enemy != null ? UnitState.Fighting : UnitState.Moving;
-    }
-
-    // ==================== 事件触发方法 ====================
-
-    /// <summary>由 CombatStrategy 在 DealDamage 命中时调用</summary>
-    public void NotifyAttackHit()
-    {
-        OnAttackHit?.Invoke();
+        ChangeState(enemy != null ? UnitState.Fighting : UnitState.Advancing);
     }
 
     // ==================== 外部公共 API ====================
 
     /// <summary>
     /// 受到伤害（供 TowerBase / Bullet / 其他单位调用）
-    /// 委托给 CombatStrategy 处理防御减伤和扣血
     /// </summary>
     public void TakeDamage(float damage, AttackType type)
     {
         if (combatStrategy == null) return;
         combatStrategy.TakeDamage(damage, type, attr, Die);
         ui.RefreshHp(attr.currentHp);
-
-        // 受击反馈
         OnDamageTaken?.Invoke(damage, type);
-        GetComponent<UnitVisual>()?.FlashRed();
-
-        // 攻击者事件（当此单位被作为"攻击命中"时由 DealDamage 侧触发 OnAttackHit）
     }
 
     /// <summary>
@@ -325,8 +346,7 @@ public class UnitBrain : MonoBehaviour
     }
 
     /// <summary>
-    /// 设置移动路径，并将单位定位到路径上距 worldPosition 最近的点
-    /// （供 InitialUnitPlacer 等初始布阵系统调用）
+    /// 设置移动路径并定位到最近点（供 InitialUnitPlacer 调用）
     /// </summary>
     public void SetPathFromPosition(PathManager path, Vector3 worldPosition)
     {
@@ -349,21 +369,24 @@ public class UnitBrain : MonoBehaviour
         moveStrategy?.Resume();
     }
 
+    /// <summary>由 CombatStrategy 在 DealDamage 命中时调用</summary>
+    public void NotifyAttackHit()
+    {
+        OnAttackHit?.Invoke();
+    }
+
     // ==================== 死亡序列 ====================
 
     void Die()
     {
         if (_state == UnitState.Dead) return;
-        state = UnitState.Dead;
+        ChangeState(UnitState.Dead);
 
-        // 事件通知（音效、任务系统等监听）
         OnDeath?.Invoke(gameObject);
 
-        // 立即禁用碰撞（停止物理交互）
         var col = GetComponent<Collider2D>();
         if (col) col.enabled = false;
 
-        // 启动死亡序列协程
         StartCoroutine(DeathSequence());
     }
 
@@ -371,7 +394,6 @@ public class UnitBrain : MonoBehaviour
     {
         ui.DestroyHpBar();
 
-        // 0.3s 淡出
         var sr = GetComponent<SpriteRenderer>();
         if (sr)
         {

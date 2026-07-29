@@ -5,8 +5,9 @@
 public enum UnitState
 {
     Moving,         // 沿路径移动中
+    Advancing,      // 路径走完，向敌方塔推进
     Fighting,       // 与敌方单位交战中
     Garrisoned,     // 驻扎在资源点/驻扎点
-    AttackingTower, // 路径走完后攻击敌方塔
-    Dead            // 已死亡（终端状态）
+    AttackingTower, // 攻击敌方防御塔
+    Dead            // 已死亡（终端状态，不可切出）
 }
