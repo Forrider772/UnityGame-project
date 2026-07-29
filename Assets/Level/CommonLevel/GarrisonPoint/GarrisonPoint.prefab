@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 2348733871229621800}
   - component: {fileID: 2086029525127744100}
   - component: {fileID: 7477281158521690590}
-  - component: {fileID: 8041468534532016891}
   - component: {fileID: 5812463085199020102}
   - component: {fileID: 9059704850550833655}
   m_Layer: 0
@@ -144,25 +143,6 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.5
---- !u!114 &8041468534532016891
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4405011921408526384}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3ea66b83746d44d45bd0adef1ac75c9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  unoccupiedColor: {r: 1, g: 1, b: 1, a: 0.5}
-  playerOccupiedColor: {r: 0.3, g: 1, b: 0.3, a: 0.9}
-  enemyOccupiedColor: {r: 1, g: 0.3, b: 0.3, a: 0.9}
-  contestedColor: {r: 1, g: 1, b: 0.3, a: 0.9}
-  pulseSpeed: 4
-  pulseMinAlpha: 0.5
-  pulseMaxAlpha: 1
 --- !u!114 &5812463085199020102
 MonoBehaviour:
   m_ObjectHideFlags: 0

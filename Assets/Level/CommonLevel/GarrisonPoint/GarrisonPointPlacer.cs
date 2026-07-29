@@ -229,6 +229,7 @@ public class GarrisonPointPlacer : MonoBehaviour
 
         hoverCircleRenderer.useWorldSpace = true;
         hoverCircleRenderer.loop = true;
+        hoverCircleRenderer.sortingLayerName = "Path";
         hoverCircleRenderer.positionCount = hoverCircleSegments;
         hoverCircleRenderer.startWidth = hoverCircleWidth;
         hoverCircleRenderer.endWidth = hoverCircleWidth;
