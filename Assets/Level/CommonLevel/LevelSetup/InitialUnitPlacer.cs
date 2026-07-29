@@ -76,6 +76,9 @@ public class InitialUnitPlacer : MonoBehaviour
             // 2. 注入阵营和层级
             UnitHelper.Configure(unit, entry.camp);
 
+            // 应用关卡 buff
+            BuffManager.Instance.ApplyBuffs(unit.GetComponent<UnitAttr>(), entry.camp);
+
             // 3. 分配行走路径（从生成位置就近走入路线，不传送回起点）
             PathManager path = LevelPathManager.Instance != null
                 ? LevelPathManager.Instance.GetPath(entry.camp, entry.pathID)

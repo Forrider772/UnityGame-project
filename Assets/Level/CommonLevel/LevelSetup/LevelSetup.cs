@@ -61,12 +61,18 @@ public class LevelSetup : MonoBehaviour
     public int garrisonPointMaxGarrison = 3;
     public float garrisonPointRange = 1.5f;
 
+    // ==================== 关卡 Buff ====================
+    [Header("━━━ 关卡 Buff（对所有匹配阵营的单位生效） ━━━")]
+    [Tooltip("在此拖入 BuffData 资产，游戏开始时自动注册到 BuffManager")]
+    public BuffData[] levelBuffs;
+
     // ==================== Awake / Start ====================
 
     void Awake()
     {
         ApplyBattleConfig();
         ApplyDeckConfig();
+        ApplyBuffConfig();
     }
 
     void Start()
@@ -176,5 +182,26 @@ public class LevelSetup : MonoBehaviour
 
         gpm.defaultMaxGarrison = garrisonPointMaxGarrison;
         gpm.defaultGarrisonRange = garrisonPointRange;
+    }
+
+    /// <summary>
+    /// 将关卡 buff 数组注册到 BuffManager，供后续单位生成时应用
+    /// </summary>
+    private void ApplyBuffConfig()
+    {
+        if (levelBuffs == null || levelBuffs.Length == 0) return;
+
+        BuffManager buffManager = FindObjectOfType<BuffManager>();
+        if (buffManager == null)
+        {
+            Debug.LogWarning("LevelSetup: 场景中未找到 BuffManager，跳过 Buff 配置");
+            return;
+        }
+
+        foreach (var buff in levelBuffs)
+        {
+            if (buff != null)
+                buffManager.RegisterBuff(buff);
+        }
     }
 }

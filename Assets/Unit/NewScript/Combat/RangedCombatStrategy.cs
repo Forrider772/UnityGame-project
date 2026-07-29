@@ -64,7 +64,7 @@ public class RangedCombatStrategy : BaseCombatStrategy
 
         if (bullet.TryGetComponent<Bullet>(out var bulletScript))
         {
-            bulletScript.damage = attr.atk;
+            bulletScript.damage = attr.ModifiedAtk;
             bulletScript.target = target;
             bulletScript.speed = bulletSpeed;
             bulletScript.attackType = attr.attackType;

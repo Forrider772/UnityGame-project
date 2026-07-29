@@ -161,6 +161,9 @@ public class WaveGenerator : MonoBehaviour
             // 注入阵营和layer（预制体可跨阵营复用）
             UnitHelper.Configure(unit, waveList.camp);
 
+            // 应用关卡 buff
+            BuffManager.Instance.ApplyBuffs(unit.GetComponent<UnitAttr>(), waveList.camp);
+
             // 给单位移动脚本赋值行走路径
             UnitBrain brain = unit.GetComponent<UnitBrain>();
             if (brain != null)

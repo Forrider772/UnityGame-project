@@ -101,15 +101,7 @@ public class TowerBase : MonoBehaviour
 // 受到伤害：区分物理/法术防御
 public void TakeDamage(float dmg, AttackType type)
 {
-    float finalDmg = dmg;
-    if(type == AttackType.Physical)
-    {
-        finalDmg = Mathf.Max(1, dmg - physicalDefense);
-    }
-    else if(type == AttackType.Magic)
-    {
-        finalDmg = Mathf.Max(1, dmg - magicDefense);
-    }
+    float finalDmg = DamageCalculator.Calculate(dmg, type, physicalDefense, magicDefense);
     hp -= finalDmg;
     hpBar?.UpdateHp(hp);
 }

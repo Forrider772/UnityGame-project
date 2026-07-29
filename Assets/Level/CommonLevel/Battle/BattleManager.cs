@@ -73,6 +73,10 @@ public class BattleManager : MonoBehaviour
     {
         if (Instance == null)
             Instance = this;
+
+        // 确保 BuffManager 组件存在，供 LevelSetup 在 Awake 阶段注册 buff
+        if (GetComponent<BuffManager>() == null)
+            gameObject.AddComponent<BuffManager>();
     }
 
     void Update()

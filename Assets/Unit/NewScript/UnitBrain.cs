@@ -59,7 +59,7 @@ public class UnitBrain : MonoBehaviour
         if (combatStrategy == null)
             Debug.LogError($"UnitBrain: {gameObject.name} 缺少 ICombatStrategy 组件！", this);
 
-        attr.currentHp = attr.maxHp;
+        attr.currentHp = attr.ModifiedMaxHp;
     }
 
     void Update()

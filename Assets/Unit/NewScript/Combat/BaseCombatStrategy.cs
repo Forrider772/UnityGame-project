@@ -209,12 +209,8 @@ public abstract class BaseCombatStrategy : MonoBehaviour, ICombatStrategy
 
     public virtual void TakeDamage(float damage, AttackType type, UnitAttr attr, Action onDie)
     {
-        float finalDmg = damage;
-
-        if (type == AttackType.Physical)
-            finalDmg = Mathf.Max(1f, damage - attr.physicalDefense);
-        else if (type == AttackType.Magic)
-            finalDmg = Mathf.Max(1f, damage - attr.magicDefense);
+        float finalDmg = DamageCalculator.Calculate(
+            damage, type, attr.physicalDefense, attr.magicDefense);
 
         attr.currentHp -= finalDmg;
 

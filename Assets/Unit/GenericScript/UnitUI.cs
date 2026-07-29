@@ -45,7 +45,7 @@ public class UnitUI : MonoBehaviour
         hpBar = barObj.GetComponent<HPBar>();
         // 绑定跟随目标和最大血量
         hpBar.target = transform;
-        hpBar.SetMaxHp(attr.maxHp);
+        hpBar.SetMaxHp(attr.ModifiedMaxHp);
 
         // ✅ 新增：飞行单位血条位置调整
         if (attr.moveType == MoveType.Flying)

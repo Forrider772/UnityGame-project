@@ -88,7 +88,7 @@ public class HealerCombatStrategy : BaseCombatStrategy
         UnitAttr targetAttr = target.GetComponent<UnitAttr>();
         if (targetAttr == null) return;
 
-        targetAttr.currentHp = Mathf.Min(targetAttr.currentHp + healAmount, targetAttr.maxHp);
+        targetAttr.currentHp = Mathf.Min(targetAttr.currentHp + healAmount, targetAttr.ModifiedMaxHp);
 
         UnitUI targetUI = target.GetComponent<UnitUI>();
         targetUI?.RefreshHp(targetAttr.currentHp);

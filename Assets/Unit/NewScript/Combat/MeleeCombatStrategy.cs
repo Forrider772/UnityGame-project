@@ -44,6 +44,6 @@ public class MeleeCombatStrategy : BaseCombatStrategy
     protected override void ExecuteAttack(Transform target)
     {
         UnitAttr attr = GetComponent<UnitAttr>();
-        DealDamage(target, attr.atk, attr.attackType);
+        DealDamage(target, attr.ModifiedAtk, attr.attackType);
     }
 }

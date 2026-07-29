@@ -70,6 +70,44 @@ public class UnitAttr : MonoBehaviour
     [Tooltip("血条预制体，挂载 HPBar 组件")]
     public GameObject hpBarPrefab;
 
+    // ==================== 运行时 Buff 修饰层 ====================
+    // BuffManager 在单位生成时写入 multiplier，Modified* 属性统一对外提供真实值
+    // 注意：multiplier 字段标记为 HideInInspector，运行时值请在下方"当前属性"调试区查看
+    [HideInInspector] public float atkMultiplier = 1f;
+    [HideInInspector] public float maxHpMultiplier = 1f;
+    [HideInInspector] public float moveSpeedMultiplier = 1f;
+    [HideInInspector] public float atkSpeedMultiplier = 1f;
+    [HideInInspector] public float physicalDefenseMultiplier = 1f;
+    [HideInInspector] public float magicDefenseMultiplier = 1f;
+
+    /// <summary>修饰后攻击力（原始 atk × 累乘倍率）</summary>
+    public float ModifiedAtk => atk * atkMultiplier;
+    /// <summary>修饰后最大生命值（原始 maxHp × 累乘倍率）</summary>
+    public float ModifiedMaxHp => maxHp * maxHpMultiplier;
+    /// <summary>修饰后移动速度（原始 moveSpeed × 累乘倍率）</summary>
+    public float ModifiedMoveSpeed => moveSpeed * moveSpeedMultiplier;
+    /// <summary>修饰后攻击间隔（原始 atkCD ÷ 攻速倍率）</summary>
+    public float ModifiedAtkCD => atkCD / atkSpeedMultiplier;
+
+    // ==================== 调试：当前属性（Inspector 只读，运行时自动同步） ====================
+    [Header("=== 调试：当前属性（只读，含 Buff 修饰） ===")]
+    [SerializeField] private float _currentAtk;
+    [SerializeField] private float _currentMaxHp;
+    [SerializeField] private float _currentMoveSpeed;
+    [SerializeField] private float _currentAtkCD;
+
+    /// <summary>
+    /// 将 Modified* 计算属性同步到序列化字段，方便在 Inspector 中查看
+    /// BuffManager.ApplyBuffs() 调用后自动触发
+    /// </summary>
+    public void SyncDebugDisplay()
+    {
+        _currentAtk = ModifiedAtk;
+        _currentMaxHp = ModifiedMaxHp;
+        _currentMoveSpeed = ModifiedMoveSpeed;
+        _currentAtkCD = ModifiedAtkCD;
+    }
+
     // ==================== 运行时状态（Inspector 隐藏） ====================
     [HideInInspector] public float currentHp;
     [HideInInspector] public bool isGarrisoned;
