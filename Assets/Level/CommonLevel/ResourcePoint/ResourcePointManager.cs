@@ -34,7 +34,11 @@ public class ResourcePointManager : MonoBehaviour
         {
             if (rp == null) continue;
 
-            if (Vector2.Distance(position, rp.transform.position) <= rp.garrisonRange)
+            // 通过 Garrison 组件检测范围
+            Garrison g = rp.GetComponent<Garrison>();
+            if (g == null) continue;
+
+            if (Vector2.Distance(position, rp.transform.position) <= g.garrisonRange)
                 return rp;
         }
 

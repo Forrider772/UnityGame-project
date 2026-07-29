@@ -1,25 +1,23 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
-/// 驻扎点组件，挂载在动态实例化的驻扎点 GameObject 上。
-/// 管理驻扎/争夺状态，支持自由配置对任意阵营生效。
-/// 与 ResourcePoint 并行但支持运行时动态放置和灵活的阵营过滤。
+/// 驻扎点组件 — 挂载在动态实例化的驻扎点 GameObject 上。
+/// 负责路径绑定、生效阵营过滤和曲线位置同步。
+/// 驻扎/占领/争夺逻辑委托给 Garrison 组件。
+///
+/// 架构：GarrisonPoint = Garrison（驻扎） + GarrisonPoint（路径绑定+阵营过滤）
+/// 驻扎核心逻辑统一由 Garrison 组件处理，本组件关注路径吸附和阵营权限。
 /// </summary>
+[RequireComponent(typeof(Garrison))]
 public class GarrisonPoint : MonoBehaviour
 {
-    [Header("生效阵营")]
+    [Header("=== 生效阵营 ===")]
     [Tooltip("对哪些阵营的单位生效（可多选）")]
     public List<CampType> effectiveCamps = new List<CampType>();
 
-    [Header("驻扎参数")]
-    public float garrisonRange = 1.5f;
-    public int maxGarrison = 3;
-
-    [Header("运行时状态")]
-    [SerializeField] private CampType? _occupyingCamp;
-    [SerializeField] private List<GameObject> _garrisonedUnits = new List<GameObject>();
-    [SerializeField] private bool _isContested;
+    // ==================== 路径绑定 ====================
 
     [HideInInspector]
     public Vector2 worldPosition;
@@ -37,10 +35,59 @@ public class GarrisonPoint : MonoBehaviour
     [Tooltip("归一化曲线距离 [0,1]，用于曲线模式下的精确定位")]
     public float boundCurveT;
 
-    public CampType? occupyingCamp => _occupyingCamp;
-    public int garrisonedCount => _garrisonedUnits.Count;
-    public bool isContested => _isContested;
-    public bool isActive => _occupyingCamp != null && !_isContested;
+    // ==================== 委托给 Garrison 的属性 ====================
+
+    /// <summary>驻扎范围（委托给 Garrison 组件）</summary>
+    public float garrisonRange
+    {
+        get => _garrison != null ? _garrison.garrisonRange : _cachedGarrisonRange;
+        set
+        {
+            _cachedGarrisonRange = value;
+            if (_garrison != null) _garrison.garrisonRange = value;
+        }
+    }
+    [SerializeField, FormerlySerializedAs("garrisonRange")]
+    private float _cachedGarrisonRange = 1.5f;
+
+    /// <summary>最大驻扎人数（委托给 Garrison 组件）</summary>
+    public int maxGarrison
+    {
+        get => _garrison != null ? _garrison.maxGarrison : _cachedMaxGarrison;
+        set
+        {
+            _cachedMaxGarrison = value;
+            if (_garrison != null) _garrison.maxGarrison = value;
+        }
+    }
+    [SerializeField, FormerlySerializedAs("maxGarrison")]
+    private int _cachedMaxGarrison = 3;
+
+    /// <summary>当前占领阵营（委托）</summary>
+    public CampType? occupyingCamp => _garrison != null ? _garrison.occupyingCamp : null;
+
+    /// <summary>是否处于争夺中（委托）</summary>
+    public bool isContested => _garrison != null && _garrison.isContested;
+
+    /// <summary>是否处于活跃占领状态（委托）</summary>
+    public bool isActive => _garrison != null && _garrison.isActive;
+
+    /// <summary>已驻扎单位数量（委托）</summary>
+    public int garrisonedCount => _garrison != null ? _garrison.garrisonedCount : 0;
+
+    private Garrison _garrison;
+
+    // ==================== 生命周期 ====================
+
+    void Awake()
+    {
+        _garrison = GetComponent<Garrison>();
+        if (_garrison == null)
+            _garrison = gameObject.AddComponent<Garrison>();
+
+        // Awake 阶段同步一次（此时 _garrison 刚初始化完）
+        SyncConfigToGarrison();
+    }
 
     void Start()
     {
@@ -51,12 +98,30 @@ public class GarrisonPoint : MonoBehaviour
         transform.position = worldPosition;
     }
 
+    /// <summary>
+    /// Inspector 中任何值变化时自动调用（Edit Mode 和 Play Mode 均生效）。
+    /// 同时也作为运行时从缓存同步到 Garrison 的入口。
+    /// </summary>
+    void OnValidate()
+    {
+        SyncConfigToGarrison();
+    }
+
+    /// <summary>
+    /// 将序列化缓存值推送到 Garrison 组件（真正的运行时数据源）
+    /// </summary>
+    private void SyncConfigToGarrison()
+    {
+        if (_garrison == null)
+            _garrison = GetComponent<Garrison>();
+        if (_garrison == null) return;
+
+        _garrison.garrisonRange = _cachedGarrisonRange;
+        _garrison.maxGarrison = _cachedMaxGarrison;
+    }
+
     void Update()
     {
-        CleanDeadUnits();
-        if (_isContested)
-            ResolveContest();
-
         // 曲线模式下同步位置到路径
         if (boundPath != null && boundCurveT >= 0f)
         {
@@ -76,24 +141,7 @@ public class GarrisonPoint : MonoBehaviour
         }
     }
 
-    void OnDestroy()
-    {
-        // 清理所有驻扎单位的引用
-        foreach (var unit in _garrisonedUnits)
-        {
-            if (unit == null) continue;
-            UnitAttr attr = unit.GetComponent<UnitAttr>();
-            if (attr != null)
-            {
-                attr.isGarrisoned = false;
-                attr.garrisonedGarrisonPoint = null;
-            }
-            UnitBrain brain = unit.GetComponent<UnitBrain>();
-            if (brain != null)
-                brain.ResumeMovement();
-        }
-        _garrisonedUnits.Clear();
-    }
+    // ==================== 阵营过滤 ====================
 
     /// <summary>
     /// 检查该驻扎点对指定阵营是否生效
@@ -103,259 +151,45 @@ public class GarrisonPoint : MonoBehaviour
         return effectiveCamps.Contains(camp);
     }
 
+    // ==================== 委托给 Garrison 的方法（带阵营过滤） ====================
+
     /// <summary>
     /// 检查单位是否在驻扎范围内
     /// </summary>
     public bool IsUnitInRange(GameObject unit)
-    {
-        return Vector2.Distance(worldPosition, unit.transform.position) <= garrisonRange;
-    }
+        => _garrison != null && _garrison.IsUnitInRange(unit);
 
     /// <summary>
-    /// 判定单位是否可以驻扎此驻扎点
+    /// 判定单位是否可以驻扎（含生效阵营过滤）
     /// </summary>
     public bool CanGarrison(GameObject unit)
     {
         UnitAttr attr = unit.GetComponent<UnitAttr>();
         if (attr == null) return false;
 
-        if (!IsUnitInRange(unit)) return false;
-        if (_isContested) return false;
-
-        // 检查生效阵营
+        // 检查生效阵营（GarrisonPoint 专属逻辑）
         if (!IsEffectiveFor(attr.camp)) return false;
 
-        // 情况A: 无人占领 → 可驻扎
-        if (_occupyingCamp == null) return true;
-
-        // 情况B: 同阵营且未满员 → 可驻扎
-        if (_occupyingCamp == attr.camp && _garrisonedUnits.Count < maxGarrison)
-            return true;
-
-        // 情况B-2: 同阵营满员 → 不可驻扎
-        // 情况C: 敌方占领 → 不可驻扎（由 UnitAI 触发抢占战斗）
-        return false;
+        return _garrison != null && _garrison.CanGarrison(unit);
     }
 
-    /// <summary>
-    /// 单位加入驻扎
-    /// </summary>
+    /// <summary>单位加入驻扎</summary>
     public void AddGarrison(GameObject unit)
-    {
-        if (_garrisonedUnits.Contains(unit)) return;
+        => _garrison?.AddGarrison(unit);
 
-        UnitAttr attr = unit.GetComponent<UnitAttr>();
-        if (attr == null) return;
-
-        _garrisonedUnits.Add(unit);
-        attr.isGarrisoned = true;
-        attr.garrisonedGarrisonPoint = this;
-
-        UnitBrain brain = unit.GetComponent<UnitBrain>();
-        if (brain != null)
-            brain.StopMovement();
-
-        if (_occupyingCamp == null)
-            _occupyingCamp = attr.camp;
-    }
-
-    /// <summary>
-    /// 单位离开驻扎（死亡/出战/回收时调用）
-    /// </summary>
+    /// <summary>单位离开驻扎</summary>
     public void RemoveGarrison(GameObject unit)
-    {
-        _garrisonedUnits.Remove(unit);
+        => _garrison?.RemoveGarrison(unit);
 
-        UnitAttr attr = unit.GetComponent<UnitAttr>();
-        if (attr != null)
-        {
-            attr.isGarrisoned = false;
-            attr.garrisonedGarrisonPoint = null;
-        }
-
-        if (_garrisonedUnits.Count == 0 && !_isContested)
-            _occupyingCamp = null;
-    }
-
-    /// <summary>
-    /// 触发抢占战斗：唤醒所有守方单位投入战斗
-    /// </summary>
+    /// <summary>触发抢占战斗</summary>
     public void StartContest(GameObject attacker)
-    {
-        if (!_isContested)
-        {
-            _isContested = true;
-        }
+        => _garrison?.StartContest(attacker);
 
-        // 唤醒所有守方单位
-        foreach (var defender in _garrisonedUnits)
-        {
-            if (defender == null) continue;
-            UnitAttr attr = defender.GetComponent<UnitAttr>();
-            if (attr != null)
-            {
-                attr.isGarrisoned = false;
-                attr.garrisonedGarrisonPoint = null;
-            }
-            UnitBrain brain = defender.GetComponent<UnitBrain>();
-            if (brain != null)
-                brain.ResumeMovement();
-        }
-    }
-
-    /// <summary>
-    /// 每帧检查争夺胜负
-    /// </summary>
-    void ResolveContest()
-    {
-        CleanDeadUnits();
-
-        bool anyDefenderAlive = _garrisonedUnits.Exists(u => u != null);
-        bool anyAttackerAlive = CheckAttackersAlive();
-
-        if (!anyDefenderAlive && anyAttackerAlive)
-        {
-            // 守方全灭 → 攻方胜，攻方存活单位自动驻扎
-            _isContested = false;
-            AutoGarrisonWinners();
-        }
-        else if (anyDefenderAlive && !anyAttackerAlive)
-        {
-            // 攻方全灭 → 守方胜，重新驻扎
-            _isContested = false;
-            ReGarrisonSurvivors();
-        }
-        else if (!anyDefenderAlive && !anyAttackerAlive)
-        {
-            // 同归于尽 → 无人占领
-            _isContested = false;
-            _occupyingCamp = null;
-            _garrisonedUnits.Clear();
-        }
-    }
-
-    /// <summary>
-    /// 攻方获胜时，存活攻方单位自动驻扎（最多 maxGarrison 人）
-    /// </summary>
-    void AutoGarrisonWinners()
-    {
-        _garrisonedUnits.Clear();
-
-        CampType? winnerCamp = GetWinnerCampFromUnitsInRange();
-        if (winnerCamp == null)
-        {
-            _occupyingCamp = null;
-            return;
-        }
-
-        _occupyingCamp = winnerCamp;
-
-        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPosition, garrisonRange);
-        int added = 0;
-        foreach (var hit in hits)
-        {
-            if (added >= maxGarrison) break;
-            UnitAttr attr = hit.GetComponent<UnitAttr>();
-            if (attr == null || attr.camp != winnerCamp || attr.currentHp <= 0) continue;
-            if (attr.isGarrisoned) continue;
-
-            _garrisonedUnits.Add(hit.gameObject);
-            attr.isGarrisoned = true;
-            attr.garrisonedGarrisonPoint = this;
-
-            UnitBrain brain = hit.GetComponent<UnitBrain>();
-            if (brain != null)
-                brain.StopMovement();
-            added++;
-        }
-    }
-
-    /// <summary>
-    /// 守方获胜时，守方存活单位重新驻扎
-    /// </summary>
-    void ReGarrisonSurvivors()
-    {
-        int added = 0;
-        foreach (var unit in _garrisonedUnits)
-        {
-            if (unit == null) continue;
-            if (added >= maxGarrison) break;
-
-            UnitAttr attr = unit.GetComponent<UnitAttr>();
-            if (attr == null || attr.currentHp <= 0 || attr.isGarrisoned) continue;
-
-            attr.isGarrisoned = true;
-            attr.garrisonedGarrisonPoint = this;
-
-            UnitBrain brain = unit.GetComponent<UnitBrain>();
-            if (brain != null)
-                brain.StopMovement();
-            added++;
-        }
-
-        if (_garrisonedUnits.Count == 0 || !_garrisonedUnits.Exists(u => u != null))
-            _occupyingCamp = null;
-    }
-
-    /// <summary>
-    /// 检查攻方是否还有存活单位在范围内
-    /// </summary>
-    bool CheckAttackersAlive()
-    {
-        if (_occupyingCamp == null) return false;
-        CampType attackerCamp = _occupyingCamp == CampType.Player ? CampType.Enemy : CampType.Player;
-
-        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPosition, garrisonRange);
-        foreach (var hit in hits)
-        {
-            UnitAttr attr = hit.GetComponent<UnitAttr>();
-            if (attr != null && attr.camp == attackerCamp && attr.currentHp > 0)
-                return true;
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// 根据范围内存活单位推断胜方阵营
-    /// </summary>
-    CampType? GetWinnerCampFromUnitsInRange()
-    {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPosition, garrisonRange);
-        foreach (var hit in hits)
-        {
-            UnitAttr attr = hit.GetComponent<UnitAttr>();
-            if (attr != null && attr.currentHp > 0)
-                return attr.camp;
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// 清理列表中已销毁的单位引用
-    /// </summary>
-    void CleanDeadUnits()
-    {
-        _garrisonedUnits.RemoveAll(u => u == null);
-    }
-
+    /// <summary>是否已满员</summary>
     public bool IsFull()
-    {
-        return _garrisonedUnits.Count >= maxGarrison;
-    }
+        => _garrison != null && _garrison.IsFull();
 
+    /// <summary>指定单位是否已驻扎在此</summary>
     public bool IsGarrisonedUnit(GameObject unit)
-    {
-        return _garrisonedUnits.Contains(unit);
-    }
-
-    void OnDrawGizmos()
-    {
-        // 编辑器下使用 transform.position（运行时用 worldPosition）
-        Vector3 pos = Application.isPlaying ? (Vector3)worldPosition : transform.position;
-
-        Gizmos.color = _occupyingCamp == null ? Color.gray
-            : _occupyingCamp == CampType.Player ? Color.green : Color.red;
-        if (_isContested) Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(pos, garrisonRange);
-    }
+        => _garrison != null && _garrison.IsGarrisonedUnit(unit);
 }

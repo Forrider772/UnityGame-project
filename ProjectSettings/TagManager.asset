@@ -48,6 +48,9 @@ TagManager:
   - name: Map
     uniqueID: 1053116777
     locked: 0
+  - name: Building
+    uniqueID: 1089745393
+    locked: 0
   - name: Path
     uniqueID: 2326163501
     locked: 0

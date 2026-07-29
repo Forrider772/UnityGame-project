@@ -111,6 +111,5 @@ public class UnitAttr : MonoBehaviour
     // ==================== 运行时状态（Inspector 隐藏） ====================
     [HideInInspector] public float currentHp;
     [HideInInspector] public bool isGarrisoned;
-    [HideInInspector] public ResourcePoint garrisonedPoint;
-    [HideInInspector] public GarrisonPoint garrisonedGarrisonPoint;
+    [HideInInspector] public Garrison garrisonedAt;  // 驻扎所在的 Garrison 组件（ResourcePoint 或 GarrisonPoint 共用）
 }

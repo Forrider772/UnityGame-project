@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 2086029525127744100}
   - component: {fileID: 7477281158521690590}
   - component: {fileID: 8041468534532016891}
+  - component: {fileID: 5812463085199020102}
+  - component: {fileID: 9059704850550833655}
   m_Layer: 0
   m_Name: GarrisonPoint
   m_TagString: Untagged
@@ -48,14 +50,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   effectiveCamps: 
-  garrisonRange: 1.5
-  maxGarrison: 3
-  _garrisonedUnits: []
-  _isContested: 0
   worldPosition: {x: 0, y: 0}
   boundPath: {fileID: 0}
   boundSegmentIndex: 0
   boundSegmentT: 0
+  boundCurveT: 0
+  _cachedGarrisonRange: 1.5
+  _cachedMaxGarrison: 3
 --- !u!212 &2086029525127744100
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -162,3 +163,38 @@ MonoBehaviour:
   pulseSpeed: 4
   pulseMinAlpha: 0.5
   pulseMaxAlpha: 1
+--- !u!114 &5812463085199020102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4405011921408526384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa1d7fd4cd8c9d54e936ecd2728a4d48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  garrisonRange: 1.5
+  maxGarrison: 3
+  _garrisonedUnits: []
+  _isContested: 0
+--- !u!114 &9059704850550833655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4405011921408526384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79bcf51a40274a0458833d7cc4798f36, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  textureResolution: 256
+  sortingLayer: Building
+  sortingOrder: 0
+  unoccupiedColor: {r: 0.25943398, g: 0.9328512, b: 1, a: 0.4}
+  playerColor: {r: 0.25882354, g: 0.9333334, b: 1, a: 0.4}
+  enemyColor: {r: 0.9, g: 0.2, b: 0.2, a: 0.4}
+  contestedColor: {r: 1, g: 1, b: 0.2, a: 0.5}

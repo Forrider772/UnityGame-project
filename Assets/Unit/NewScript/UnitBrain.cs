@@ -279,10 +279,8 @@ public class UnitBrain : MonoBehaviour
     {
         if (!attr.isGarrisoned) return;
 
-        if (attr.garrisonedPoint != null)
-            attr.garrisonedPoint.RemoveGarrison(gameObject);
-        else if (attr.garrisonedGarrisonPoint != null)
-            attr.garrisonedGarrisonPoint.RemoveGarrison(gameObject);
+        if (attr.garrisonedAt != null)
+            attr.garrisonedAt.RemoveGarrison(gameObject);
 
         moveStrategy?.Resume();
 

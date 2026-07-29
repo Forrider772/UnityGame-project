@@ -93,14 +93,9 @@ public class UnitAI : MonoBehaviour
     {
         if (!attr.isGarrisoned) return;
 
-        if (attr.garrisonedPoint != null)
+        if (attr.garrisonedAt != null)
         {
-            attr.garrisonedPoint.RemoveGarrison(gameObject);
-            movement.ResumeMovement();
-        }
-        else if (attr.garrisonedGarrisonPoint != null)
-        {
-            attr.garrisonedGarrisonPoint.RemoveGarrison(gameObject);
+            attr.garrisonedAt.RemoveGarrison(gameObject);
             movement.ResumeMovement();
         }
     }

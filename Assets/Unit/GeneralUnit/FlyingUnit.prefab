@@ -163,8 +163,7 @@ MonoBehaviour:
   hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
   currentHp: 0
   isGarrisoned: 0
-  garrisonedPoint: {fileID: 0}
-  garrisonedGarrisonPoint: {fileID: 0}
+  garrisonedAt: {fileID: 0}
 --- !u!114 &-7181395724997178257
 MonoBehaviour:
   m_ObjectHideFlags: 0
