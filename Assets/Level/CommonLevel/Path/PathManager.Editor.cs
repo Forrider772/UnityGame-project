@@ -13,6 +13,7 @@ public partial class PathManager
     private static readonly Color selectedColor      = new Color(1f, 0.85f, 0.2f, 1f);
     private static readonly Color arrowColor         = new Color(1f, 0.6f, 0.1f, 0.9f);
     private static readonly Color arrowColorSelected = new Color(1f, 0.3f, 0.1f, 1f);
+    private static readonly Color teleportColor      = new Color(0.8f, 0.3f, 1f, 0.9f); // 传送段紫色
     private const float unselectedNodeRadius = 0.08f;
     private const float selectedNodeRadius   = 0.25f;
     private const float unselectedLineWidth  = 2f;
@@ -89,6 +90,8 @@ public partial class PathManager
             DrawPathNodes(unselectedColor, unselectedNodeRadius);
             DrawDirectionArrows(arrowColor, arrowSize, filled: false);
         }
+
+        DrawTeleportSegments();
     }
 
     private void OnDrawGizmosSelected()
@@ -98,6 +101,54 @@ public partial class PathManager
         DrawDirectionArrows(arrowColorSelected, arrowSizeSelected, filled: true);
         DrawPathLabel();
         DrawStartPointMarker();
+        DrawTeleportSegments();
+    }
+
+    /// <summary>
+    /// 绘制传送段可视化：紫色虚线 + 段起点菱形标记 + "传送"标签
+    /// </summary>
+    private void DrawTeleportSegments()
+    {
+        int segCount = GetSegmentCount();
+        if (segCount <= 0) return;
+
+        UnityEditor.Handles.color = teleportColor;
+
+        for (int i = 0; i < segCount; i++)
+        {
+            if (GetConnectionType(i) != ConnectionType.Teleport) continue;
+
+            Vector2 startPt = GetSegmentStartPoint(i);
+            Vector2 endPt = GetSegmentEndPoint(i);
+
+            // 紫色虚线连接传送起点和终点
+            UnityEditor.Handles.DrawDottedLine(startPt, endPt, 4f);
+
+            // 段起点菱形标记
+            float diamondSize = 0.18f;
+            Vector3[] diamond = new Vector3[]
+            {
+                startPt + Vector2.up * diamondSize,
+                startPt + Vector2.right * diamondSize,
+                startPt + Vector2.down * diamondSize,
+                startPt + Vector2.left * diamondSize,
+            };
+            UnityEditor.Handles.DrawAAConvexPolygon(diamond);
+
+            // "传送"标签（段中点上方）
+            Vector2 midPt = (startPt + endPt) * 0.5f;
+            UnityEditor.Handles.Label(
+                midPt + Vector2.up * 0.4f,
+                "传送",
+                new GUIStyle()
+                {
+                    normal = new GUIStyleState { textColor = teleportColor },
+                    fontSize = 11,
+                    fontStyle = FontStyle.Bold,
+                    alignment = TextAnchor.MiddleCenter
+                }
+            );
+        }
     }
 
     /// <summary>

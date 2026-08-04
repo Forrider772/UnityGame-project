@@ -27,4 +27,7 @@ public interface IMoveStrategy
 
     /// <summary>向目标点追击移动（战斗中使用）。地面和飞行各自实现不同的追击方式</summary>
     void MoveToward(Vector2 target, float speed);
+
+    /// <summary>是否正在传送等待中（供 UnitBrain 跳过索敌/驻扎检测）</summary>
+    bool IsTeleporting { get; }
 }

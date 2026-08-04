@@ -124,6 +124,13 @@ public class UnitBrain : MonoBehaviour
     /// </summary>
     void UpdateMoving()
     {
+        // ★ 传送中跳过一切索敌/驻扎检测（单位处于无敌/不可交互状态）
+        if (moveStrategy.IsTeleporting)
+        {
+            moveStrategy.Move(Time.deltaTime, attr.ModifiedMoveSpeed);
+            return;
+        }
+
         // 优先检测敌人
         Transform enemy = combatStrategy.DetectTarget(attr, transform.position);
         if (enemy != null)
@@ -332,6 +339,10 @@ public class UnitBrain : MonoBehaviour
     public void TakeDamage(float damage, AttackType type)
     {
         if (combatStrategy == null) return;
+
+        // 传送中完全无敌：忽略一切伤害（含已锁定攻击和飞行中的子弹）
+        if (moveStrategy != null && moveStrategy.IsTeleporting) return;
+
         combatStrategy.TakeDamage(damage, type, attr, Die);
         ui.RefreshHp(attr.currentHp);
         OnDamageTaken?.Invoke(damage, type);
@@ -383,6 +394,10 @@ public class UnitBrain : MonoBehaviour
         ChangeState(UnitState.Dead);
 
         OnDeath?.Invoke(gameObject);
+
+        // 传送中死亡时恢复渲染，保证死亡淡出动画可见
+        var sr = GetComponent<SpriteRenderer>();
+        if (sr != null) sr.enabled = true;
 
         var col = GetComponent<Collider2D>();
         if (col) col.enabled = false;

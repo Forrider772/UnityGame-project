@@ -36,6 +36,14 @@ public partial class PathManager : MonoBehaviour
     [Tooltip("启用后路线首尾相连形成闭环，单位到达终点后自动回到起点循环前进")]
     public bool isLooping = false;
 
+    [Header("连接类型配置")]
+    [Tooltip("每个路径段的连接类型。n 个路径点有 n-1 个段落（循环模式 n 个）。索引 i 对应 pathPoints[i] → pathPoints[i+1]")]
+    public List<ConnectionType> connectionTypes = new List<ConnectionType>();
+
+    [Tooltip("传送段的等待时间（秒），不受单位移动速度影响")]
+    [Range(0f, 10f)]
+    public float teleportTime = 3.0f;
+
     private PathVisualManager visualManager;  // 视觉效果管理器引用
 
     // ==================== 曲线运行时缓存 ====================
@@ -54,7 +62,20 @@ public partial class PathManager : MonoBehaviour
         if (visualManager == null)
             Debug.LogWarning($"PathManager [{camp}] {pathId}: 未找到子物体 PathVisualManager，路径将不可见", this);
         BuildCurveData();
+        SyncConnectionTypes();
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        // 编辑器中路径点数量变化时自动同步 connectionTypes 列表大小（延迟执行避免序列化冲突）
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this == null) return;
+            SyncConnectionTypes();
+        };
+    }
+#endif
 
     /// <summary>
     /// 预计算曲线弧长表（Awake 中执行，确保任何 Start 阶段查询路径时数据已就绪）
@@ -202,6 +223,153 @@ public partial class PathManager : MonoBehaviour
                 : PathMath.LinearTangent(rawPts, Mathf.Clamp01(normalizedDist));
         }
         return CatmullRomMath.CRTangent(pts, nodeParams, seg, s, isLooping);
+    }
+
+    // ==================== 路径段查询 API ====================
+
+    /// <summary>
+    /// 确保 connectionTypes 列表大小与路径段数一致（不足补齐 Walk，多余裁剪）
+    /// </summary>
+    private void SyncConnectionTypes()
+    {
+        int segCount = GetSegmentCount();
+        while (connectionTypes.Count < segCount)
+            connectionTypes.Add(ConnectionType.Walk);
+        while (connectionTypes.Count > segCount)
+            connectionTypes.RemoveAt(connectionTypes.Count - 1);
+    }
+
+    /// <summary>
+    /// 获取路径段总数
+    /// 直线模式 = 有效路径点数 - 1（循环模式 +1），曲线模式使用 mathSegCount
+    /// </summary>
+    public int GetSegmentCount()
+    {
+        if (useCurve && mathSegCount > 0)
+            return mathSegCount;
+
+        Vector2[] raw = GetRawControlPoints();
+        if (raw.Length < 2) return 0;
+        return isLooping ? raw.Length : raw.Length - 1;
+    }
+
+    /// <summary>
+    /// 获取指定路径段的连接类型（索引越界或列表为空时返回 Walk，向后兼容）
+    /// </summary>
+    public ConnectionType GetConnectionType(int segmentIndex)
+    {
+        if (connectionTypes == null || connectionTypes.Count == 0) return ConnectionType.Walk;
+        if (segmentIndex < 0 || segmentIndex >= connectionTypes.Count) return ConnectionType.Walk;
+        return connectionTypes[segmentIndex];
+    }
+
+    /// <summary>
+    /// 获取指定路径段的归一化起始进度 [0, 1]
+    /// </summary>
+    public float GetSegmentStartProgress(int segmentIndex)
+    {
+        int segCount = GetSegmentCount();
+        if (segCount <= 0) return 0f;
+
+        float totalLen = GetTotalArcLength();
+        if (totalLen <= 0f) return 0f;
+
+        float segStartDist;
+        if (useCurve && cumArcLengths != null && cumArcLengths.Length > 0)
+        {
+            // 曲线模式：使用预计算累加弧长表
+            int clamped = Mathf.Clamp(segmentIndex, 0, cumArcLengths.Length);
+            segStartDist = clamped > 0 ? cumArcLengths[clamped - 1] : 0f;
+        }
+        else
+        {
+            // 直线模式：按折线累加计算
+            Vector2[] pts = GetRawControlPoints();
+            int limit = Mathf.Min(segmentIndex, segCount);
+            segStartDist = 0f;
+            for (int i = 0; i < limit; i++)
+            {
+                int next = isLooping ? (i + 1) % pts.Length : i + 1;
+                segStartDist += Vector2.Distance(pts[i], pts[next]);
+            }
+        }
+        return segStartDist / totalLen;
+    }
+
+    /// <summary>
+    /// 获取指定路径段的归一化结束进度 [0, 1]
+    /// </summary>
+    public float GetSegmentEndProgress(int segmentIndex)
+    {
+        int segCount = GetSegmentCount();
+        if (segCount <= 0) return 1f;
+
+        // 最后一个段（非循环）结束于路径终点
+        if (!isLooping && segmentIndex >= segCount - 1)
+            return 1f;
+        return GetSegmentStartProgress(segmentIndex + 1);
+    }
+
+    /// <summary>
+    /// 获取指定路径段起点的世界坐标
+    /// </summary>
+    public Vector2 GetSegmentStartPoint(int segmentIndex)
+    {
+        return GetCurvePoint(GetSegmentStartProgress(segmentIndex));
+    }
+
+    /// <summary>
+    /// 获取指定路径段终点的世界坐标
+    /// </summary>
+    public Vector2 GetSegmentEndPoint(int segmentIndex)
+    {
+        return GetCurvePoint(GetSegmentEndProgress(segmentIndex));
+    }
+
+    /// <summary>
+    /// 根据归一化距离 [0,1] 找到当前所在的路径段索引
+    /// 循环模式自动 wrap，非循环 clamp 到 [0, segCount-1]
+    /// </summary>
+    public int GetSegmentAtProgress(float normalizedProgress)
+    {
+        int segCount = GetSegmentCount();
+        if (segCount <= 0) return 0;
+
+        if (isLooping)
+        {
+            normalizedProgress = normalizedProgress % 1.0f;
+            if (normalizedProgress < 0f) normalizedProgress += 1.0f;
+        }
+        else
+        {
+            normalizedProgress = Mathf.Clamp01(normalizedProgress);
+        }
+
+        // 曲线模式：用累加弧长表二分查找
+        if (useCurve && cumArcLengths != null && cumArcLengths.Length > 0)
+        {
+            float targetDist = normalizedProgress * totalArcLength;
+            return CatmullRomMath.FindSegmentByDistance(cumArcLengths, targetDist);
+        }
+
+        // 直线模式：按折线累加长度查找
+        // 注意：边界位置归属右侧段（accum + segLen > target 严格大于），
+        // 与曲线模式 FindSegmentByDistance 的边界语义保持一致，
+        // 避免传送完成后因边界浮点歧义重复触发传送
+        Vector2[] pts = GetRawControlPoints();
+        float totalLen = GetTotalArcLength();
+        float target = normalizedProgress * totalLen;
+        float accum = 0f;
+        int n = isLooping ? pts.Length : pts.Length - 1;
+        for (int i = 0; i < n; i++)
+        {
+            int next = isLooping ? (i + 1) % pts.Length : i + 1;
+            float segLen = Vector2.Distance(pts[i], pts[next]);
+            if (accum + segLen > target || i == n - 1)
+                return i;
+            accum += segLen;
+        }
+        return n - 1;
     }
 
     /// <summary>

@@ -76,4 +76,15 @@ public class UnitUI : MonoBehaviour
             hpBar = null;
         }
     }
+
+    /// <summary>
+    /// 设置血条显隐（传送期间隐藏，传送完成显示）
+    /// 血条未初始化或已销毁时自动跳过
+    /// </summary>
+    /// <param name="visible">true 显示，false 隐藏</param>
+    public void SetHpBarVisible(bool visible)
+    {
+        if (hpBar != null)
+            hpBar.gameObject.SetActive(visible);
+    }
 }
