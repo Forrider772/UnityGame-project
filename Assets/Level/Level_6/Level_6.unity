@@ -1663,6 +1663,7 @@ MonoBehaviour:
   enableLeashZone: 1
   leashRange: 10
   leashCostRefundRatio: 0.5
+  useBossVictory: 1
 --- !u!4 &1416170813
 Transform:
   m_ObjectHideFlags: 0

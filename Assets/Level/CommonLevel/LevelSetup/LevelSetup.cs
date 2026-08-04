@@ -77,6 +77,11 @@ public class LevelSetup : MonoBehaviour
     [Tooltip("牵制死亡时返还的部署费用比例（0.5 = 返还一半）")]
     public float leashCostRefundRatio = 0.5f;
 
+    // ==================== Boss 单位胜利 ====================
+    [Header("━━━ Boss 单位胜利（替代敌方塔摧毁判定） ━━━")]
+    [Tooltip("启用后：敌方塔被摧毁不再判胜，仅挂有 BossUnit 组件的敌方单位死亡触发胜利；玩家塔被摧毁仍判负")]
+    public bool useBossVictory = false;
+
     // ==================== Awake / Start ====================
 
     void Awake()
@@ -114,6 +119,10 @@ public class LevelSetup : MonoBehaviour
             bm.costAddSpeed = costAddSpeed;
             bm.nowCost = startingCost;
         }
+
+        // Boss 胜利模式：敌方塔摧毁不判胜，仅 BossUnit 死亡触发胜利
+        if (useBossVictory)
+            bm.useBossVictory = true;
 
         if (overrideWaveConfig && waveList != null)
             bm.waveList = waveList;

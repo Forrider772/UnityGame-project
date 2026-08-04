@@ -26,6 +26,13 @@ public class BattleManager : MonoBehaviour
     /// <summary>敌方防御塔是否存活</summary>
     public bool enemyTowerAlive = true;
 
+    /// <summary>
+    /// Boss 死亡触发胜利（由 LevelSetup 在 Awake 阶段设置）。
+    /// 启用后：敌方塔被摧毁不再判胜，仅标记 BossUnit 的单位死亡触发胜利；
+    /// 玩家塔被摧毁仍判负。
+    /// </summary>
+    [HideInInspector] public bool useBossVictory = false;
+
     [Header("费用")]
     public float nowCost;
     public float maxCost = 10f;
@@ -126,10 +133,26 @@ public class BattleManager : MonoBehaviour
     public void CheckWin()
     {
         if (isGameOver) return;
-        if (!enemyTowerAlive)
+
+        // Boss 胜利模式下：敌方塔被摧毁不判胜（仅 BossUnit 死亡触发胜利）
+        if (!useBossVictory && !enemyTowerAlive)
+        {
             GameWin();
-        else if (!playerTowerAlive)
+            return;
+        }
+
+        if (!playerTowerAlive)
             GameLose();
+    }
+
+    /// <summary>
+    /// Boss 单位死亡时调用（由 BossUnit 触发），直接判胜。
+    /// 独立于塔存活状态，不受 useBossVictory 开关影响（开关仅控制塔判胜是否生效）。
+    /// </summary>
+    public void OnBossDefeated()
+    {
+        if (isGameOver) return;
+        GameWin();
     }
 
     /// <summary>
