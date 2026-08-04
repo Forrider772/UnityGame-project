@@ -112,4 +112,7 @@ public class UnitAttr : MonoBehaviour
     [HideInInspector] public float currentHp;
     [HideInInspector] public bool isGarrisoned;
     [HideInInspector] public Garrison garrisonedAt;  // 驻扎所在的 Garrison 组件（ResourcePoint 或 GarrisonPoint 共用）
+
+    /// <summary>部署此单位消耗的费用（用于 Boss 关牵制死亡返还），由 CardDeploy 在生成时设置</summary>
+    [HideInInspector] public int deployCost;
 }

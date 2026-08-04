@@ -261,6 +261,7 @@ GameObject:
   - component: {fileID: 187648218}
   - component: {fileID: 187648220}
   - component: {fileID: 187648219}
+  - component: {fileID: 187648221}
   m_Layer: 12
   m_Name: PlayerTower
   m_TagString: Untagged
@@ -277,7 +278,7 @@ Transform:
   m_GameObject: {fileID: 187648217}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.33, y: 1.04, z: 0}
+  m_LocalPosition: {x: -0.37, y: 0.78, z: 0}
   m_LocalScale: {x: 2.4685907, y: 2.4685907, z: 2.4685907}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -355,6 +356,21 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &187648221
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 187648217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c41b9a5e2f1d4e68a90c3b2f4d5a6b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  leashRange: 8
+  costRefundRatio: 0.5
+  checkInterval: 0.25
 --- !u!1 &197207575
 GameObject:
   m_ObjectHideFlags: 0
@@ -527,6 +543,8 @@ MonoBehaviour:
   curveAlpha: 0.5
   curveSamples: 15
   isLooping: 0
+  connectionTypes: 00000000
+  teleportTime: 3
 --- !u!1 &363381189
 GameObject:
   m_ObjectHideFlags: 0
@@ -960,6 +978,8 @@ MonoBehaviour:
   curveAlpha: 0.5
   curveSamples: 15
   isLooping: 1
+  connectionTypes: 00000000000000000000000000000000
+  teleportTime: 3
 --- !u!1 &749345462
 GameObject:
   m_ObjectHideFlags: 0
@@ -1285,6 +1305,8 @@ MonoBehaviour:
   curveAlpha: 0.5
   curveSamples: 15
   isLooping: 0
+  connectionTypes: 00000000
+  teleportTime: 3
 --- !u!1001 &1212020259
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1466,6 +1488,8 @@ MonoBehaviour:
   curveAlpha: 0.5
   curveSamples: 15
   isLooping: 0
+  connectionTypes: 00000000
+  teleportTime: 3
 --- !u!1 &1359411289
 GameObject:
   m_ObjectHideFlags: 0
@@ -1523,6 +1547,8 @@ MonoBehaviour:
   curveAlpha: 0.5
   curveSamples: 15
   isLooping: 0
+  connectionTypes: 00000000
+  teleportTime: 3
 --- !u!1 &1371750005
 GameObject:
   m_ObjectHideFlags: 0
@@ -1633,6 +1659,10 @@ MonoBehaviour:
   garrisonPointMaxGarrison: 3
   garrisonPointRange: 1.5
   levelBuffs: []
+  overrideLeashConfig: 0
+  enableLeashZone: 1
+  leashRange: 10
+  leashCostRefundRatio: 0.5
 --- !u!4 &1416170813
 Transform:
   m_ObjectHideFlags: 0
@@ -1767,6 +1797,8 @@ MonoBehaviour:
   curveAlpha: 0.5
   curveSamples: 15
   isLooping: 0
+  connectionTypes: 00000000
+  teleportTime: 3
 --- !u!1 &1485090533
 GameObject:
   m_ObjectHideFlags: 0
@@ -1824,6 +1856,8 @@ MonoBehaviour:
   curveAlpha: 0.5
   curveSamples: 15
   isLooping: 0
+  connectionTypes: 00000000
+  teleportTime: 3
 --- !u!1 &1593596452
 GameObject:
   m_ObjectHideFlags: 0
@@ -2205,6 +2239,8 @@ MonoBehaviour:
   curveAlpha: 0.5
   curveSamples: 15
   isLooping: 0
+  connectionTypes: 00000000
+  teleportTime: 3
 --- !u!1 &1917160849
 GameObject:
   m_ObjectHideFlags: 0
@@ -2262,6 +2298,8 @@ MonoBehaviour:
   curveAlpha: 0.5
   curveSamples: 15
   isLooping: 0
+  connectionTypes: 00000000
+  teleportTime: 3
 --- !u!1 &1941020390
 GameObject:
   m_ObjectHideFlags: 0

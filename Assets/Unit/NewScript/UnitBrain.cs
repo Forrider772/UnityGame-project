@@ -386,9 +386,21 @@ public class UnitBrain : MonoBehaviour
         OnAttackHit?.Invoke();
     }
 
+    /// <summary>
+    /// 当前是否处于传送等待中（传送中单位完全无敌，Boss 关牵制检测应跳过）
+    /// </summary>
+    public bool IsTeleporting()
+    {
+        return moveStrategy != null && moveStrategy.IsTeleporting;
+    }
+
     // ==================== 死亡序列 ====================
 
-    void Die()
+    /// <summary>
+    /// 执行死亡流程：切到 Dead 状态 → 触发 OnDeath → 播放淡出动画 → 销毁。
+    /// 公开供外部系统（如 Boss 关 TowerLeashZone 牵制死亡）直接触发。
+    /// </summary>
+    public void Die()
     {
         if (_state == UnitState.Dead) return;
         ChangeState(UnitState.Dead);

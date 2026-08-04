@@ -66,6 +66,17 @@ public class LevelSetup : MonoBehaviour
     [Tooltip("在此拖入 BuffData 资产，游戏开始时自动注册到 BuffManager")]
     public BuffData[] levelBuffs;
 
+    // ==================== Boss 牵制范围 ====================
+    [Header("━━━ Boss 牵制范围 → 覆盖己方塔 TowerLeashZone ━━━")]
+    [Tooltip("开启后本关启用牵制机制：玩家单位超出己方塔牵制半径时死亡并返还部分费用")]
+    public bool overrideLeashConfig = false;
+    public bool enableLeashZone = true;
+    [Tooltip("牵制半径（世界单位）")]
+    public float leashRange = 10f;
+    [Range(0f, 1f)]
+    [Tooltip("牵制死亡时返还的部署费用比例（0.5 = 返还一半）")]
+    public float leashCostRefundRatio = 0.5f;
+
     // ==================== Awake / Start ====================
 
     void Awake()
@@ -73,6 +84,7 @@ public class LevelSetup : MonoBehaviour
         ApplyBattleConfig();
         ApplyDeckConfig();
         ApplyBuffConfig();
+        ApplyLeashConfig();
     }
 
     void Start()
@@ -203,5 +215,25 @@ public class LevelSetup : MonoBehaviour
             if (buff != null)
                 buffManager.RegisterBuff(buff);
         }
+    }
+
+    /// <summary>
+    /// 将 Boss 牵制范围配置写入己方塔的 TowerLeashZone（若场景中有）
+    /// 注意：TowerLeashZone 挂在己方塔上，场景中不存在时此项配置无效果
+    /// </summary>
+    private void ApplyLeashConfig()
+    {
+        if (!overrideLeashConfig) return;
+
+        TowerLeashZone zone = FindObjectOfType<TowerLeashZone>();
+        if (zone == null)
+        {
+            Debug.LogWarning("LevelSetup: 场景中未找到 TowerLeashZone，跳过牵制范围配置");
+            return;
+        }
+
+        zone.enabled = enableLeashZone;
+        zone.leashRange = leashRange;
+        zone.costRefundRatio = leashCostRefundRatio;
     }
 }

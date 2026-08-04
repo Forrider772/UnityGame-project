@@ -204,6 +204,16 @@ public class CardDeploy : MonoBehaviour
 
         // 3. 为单位的移动组件设置路径
         UnitBrain brain = unit.GetComponent<UnitBrain>();
+
+        // 记录部署费用（用于 Boss 关 TowerLeashZone 牵制死亡返还）
+        UnitAttr unitAttr = unit.GetComponent<UnitAttr>();
+        if (unitAttr != null)
+            unitAttr.deployCost = selectedCard.cost;
+
+        // 注册到牵制范围（若本关启用了该机制；场景中无 TowerLeashZone 时为 no-op）
+        if (TowerLeashZone.Instance != null && brain != null)
+            TowerLeashZone.Instance.RegisterUnit(brain);
+
         if (brain != null)
             brain.SetPath(targetPath);
 

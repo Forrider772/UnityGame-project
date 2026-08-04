@@ -113,6 +113,14 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 增加费用（如 Boss 关牵制死亡返还），不超过费用上限
+    /// </summary>
+    public void AddCost(float amount)
+    {
+        nowCost = Mathf.Min(nowCost + amount, maxCost);
+    }
+
+    /// <summary>
     /// 胜负判定入口，由防御塔被摧毁时调用
     /// </summary>
     public void CheckWin()
