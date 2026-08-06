@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 /// <summary>
 /// 战斗核心管理器（单例）
@@ -179,6 +180,16 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 关卡通关 → 先播的剧情场景 映射。
+    /// 表示：该关卡通关后，先加载此剧情场景，播完由剧情场景跳转下一关。
+    /// 新增剧情只需往这里加条目。
+    /// </summary>
+    private static readonly Dictionary<string, string> LevelToStoryMap = new Dictionary<string, string>
+    {
+        { "Level_1", "StoryScene_Ch2" }, // Level_1 通关 → 播第二章剧情
+    };
+
+    /// <summary>
     /// 胜利面板 — "下一关"按钮：恢复时间流速，读取存档进入下一关
     /// </summary>
     void OnWinNextLevel()
@@ -186,6 +197,15 @@ public class BattleManager : MonoBehaviour
         Time.timeScale = 1;
         var save = SaveManager.LoadSave(SaveManager.CurrentSlotIndex);
         string scene = save != null ? save.currentLevelScene : "MenuScene";
+
+        // 该关卡通关后需要先播剧情
+        string storyScene;
+        if (LevelToStoryMap.TryGetValue(SceneManager.GetActiveScene().name, out storyScene))
+        {
+            SceneManager.LoadScene(storyScene);
+            return;
+        }
+
         SceneManager.LoadScene(scene);
     }
 
