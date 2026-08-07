@@ -117,17 +117,18 @@ public class MenuManager : MonoBehaviour
     #region 核心流程
 
     /// <summary>
-    /// 在指定栏位开始新游戏：删除旧档 → 创建新档 → 保存 → 进入第一关
+    /// 在指定栏位开始新游戏：删除旧档 → 创建新档 → 保存 → 先播第一章剧情再进入第一关
     /// </summary>
     private void StartNewGame(int slotIndex)
     {
         if (isLoading) return;
-        isLoading = true;
         saveSlotPanel.Hide();
         SaveManager.DeleteSave(slotIndex);
         var data = SaveManager.CreateNewGame();
         SaveManager.SaveGame(data, slotIndex);
-        LoadScene("Level_1", slotIndex);
+        // 先播第一章剧情（StoryScene_Ch1 播完自动进入 Level_1）
+        // LoadScene 内部会设置 isLoading 并执行场景切换，这里不能提前置位
+        LoadScene("StoryScene_Ch1", slotIndex);
     }
 
     /// <summary>
