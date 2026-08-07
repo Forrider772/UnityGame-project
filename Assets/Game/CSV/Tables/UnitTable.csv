@@ -1,0 +1,9 @@
+﻿unitID,camp,moveType,attackRangeType,attackType,maxHp,physicalDefense,magicDefense,atk,atkRange,atkCD,moveSpeed,detectRange
+soldier,Player,Ground,Melee,Physical,200,5,0,60,1,1.2,1.5,1
+hound,Player,Ground,Melee,Physical,100,0,0,20,1,0.9,3,1
+Mechs,Player,Ground,Melee,Physical,350,30,0,60,1,1.4,1,1
+Enemy,Enemy,Ground,Melee,Physical,200,10,0,60,1,1.2,1.5,1
+FlyingUnit,Player,Flying,Melee,Physical,100,5,0,20,1,1.5,2,3
+Archer,Player,Ground,Ranged,Physical,200,0,30,80,7,1.2,1.5,7
+Mage,Player,Ground,Ranged,Magic,280,0,50,80,2,1.5,1.3,2
+Healer,Player,Ground,Melee,Magic,300,0,50,0,9,1.5,1,9

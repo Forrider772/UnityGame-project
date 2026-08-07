@@ -1,0 +1,9 @@
+﻿cardID,unitID,camp,cardName,cost,cooldown
+soldier,soldier,Player,步兵,3,3
+hound,hound,Player,猎犬,1,2
+Mechs,Mechs,Player,机甲,5,5
+Enemy,Enemy,Enemy,敌方步兵,0,0
+FlyingUnit,FlyingUnit,Player,飞行单位,4,4
+Archer,Archer,Player,射手,4,4
+Mage,Mage,Player,法师,5,5
+Healer,Healer,Player,治疗师,3,3
