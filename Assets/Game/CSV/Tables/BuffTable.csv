@@ -1,0 +1,4 @@
+﻿# Buff 表：每行 = 某关应用的一个 Buff（buffID 引用 Buff_{buffID}.asset，需先在 Unity 建好 Buff 资产）
+# 现有 Buff：PlayerAtkUp20（攻击力+20%）
+# 示例（给 Level_1 加该 Buff）：1,PlayerAtkUp20
+levelIndex,buffID

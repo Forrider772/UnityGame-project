@@ -33,6 +33,18 @@ public static class ConfigTableConst
     public const string UnitPrefabDir = "Assets/Game/Unit/GeneralUnit";
     public const string CardAssetDir  = "Assets/Game/Unit/CardAssets";
 
+    // ---- LevelConfig 扩展表 ----
+    public const string DeckCsvPath    = "Assets/Game/CSV/Tables/DeckTable.csv";
+    public const string BuffCsvPath    = "Assets/Game/CSV/Tables/BuffTable.csv";
+    public const string TowerCsvPath   = "Assets/Game/CSV/Tables/TowerTable.csv";
+    public const int    WaveLevelCount = 6;
+    public const string LevelConfigDir = "Assets/Resources/Config";
+
+    public static string WaveCsvPath(int level)        => $"{CsvDir}/WaveTable_Level_{level}.csv";
+    public static string WaveAssetPath(int level)      => $"Assets/Game/Level/Level_{level}/WaveList_Level_{level}.asset";
+    public static string LevelConfigAssetPath(int level) => $"{LevelConfigDir}/LevelConfig_Level_{level}.asset";
+    public static string LevelScenePath(int level)     => $"Assets/Game/Level/Level_{level}/Level_{level}.unity";
+
     // ==================== 导入安全 ====================
     public const string BackupDir          = "Assets/Game/CSV/Tables/_backup";
     public const bool   BackupBeforeImport = true;
@@ -57,6 +69,46 @@ public static class ConfigTableConst
 
     // ==================== 卡牌表必填列 ====================
     public static readonly string[] CardColumns = { "cardID", "unitID", "camp", "cardName", "cost", "cooldown" };
+
+    // ==================== LevelConfig 扩展表列定义 ====================
+    public static readonly string[] DeckColumns = { "levelIndex", "cardID" };
+    public static readonly string[] BuffColumns = { "levelIndex", "buffID" };
+    public static readonly string[] TowerColumns = { "levelIndex", "towerCamp", "hp", "atk", "atkRange", "atkCD", "physicalDefense", "magicDefense" };
+    public static readonly string[] WaveColumns = { "waveIndex", "camp", "unitID", "pathID", "spawnCount", "spawnInterval", "triggerType", "delayBeforeStart" };
+
+    // ==================== 通用辅助 ====================
+
+    /// <summary>加载关卡 LevelConfig 资产；不存在则创建新资产并落盘（自动建目录）</summary>
+    public static LevelConfig LoadOrCreateLevelConfig(int level)
+    {
+        string path = LevelConfigAssetPath(level);
+        LevelConfig cfg = AssetDatabase.LoadAssetAtPath<LevelConfig>(path);
+        if (cfg != null) return cfg;
+
+        string dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
+
+        cfg = ScriptableObject.CreateInstance<LevelConfig>();
+        cfg.levelIndex = level;
+        AssetDatabase.CreateAsset(cfg, path);
+        return cfg;
+    }
+
+    /// <summary>按文件基名查找资产（如 cardID → 匹配 Card_{cardID}.asset），用于导入时解析引用</summary>
+    public static T FindAssetByFileName<T>(string fileNameWithoutExt) where T : UnityEngine.Object
+    {
+        if (string.IsNullOrEmpty(fileNameWithoutExt)) return null;
+
+        string[] guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
+        foreach (var guid in guids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            if (Path.GetFileNameWithoutExtension(path) == fileNameWithoutExt)
+                return AssetDatabase.LoadAssetAtPath<T>(path);
+        }
+        return null;
+    }
 
     /// <summary>
     /// 导入前备份将改写的资产文件到 _backup/{时间戳}/，供误操作后恢复。

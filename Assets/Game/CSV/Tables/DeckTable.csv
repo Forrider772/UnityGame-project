@@ -1,0 +1,7 @@
+﻿# 初始牌组表：每行 = 某关卡组里的一张卡（cardID 引用 Card_{cardID}.asset，不生成新卡）
+# 现有卡牌 cardID：soldier / hound / Mechs / Enemy / FlyingUnit / Archer / Mage / Healer
+# 示例（Level_1 玩家可用 士兵+射手+法师）：
+# 1,soldier
+# 1,Archer
+# 1,Mage
+levelIndex,cardID

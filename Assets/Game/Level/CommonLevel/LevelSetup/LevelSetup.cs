@@ -66,30 +66,14 @@ public class LevelSetup : MonoBehaviour
     [Tooltip("在此拖入 BuffData 资产，游戏开始时自动注册到 BuffManager")]
     public BuffData[] levelBuffs;
 
-    // ==================== Boss 牵制范围 ====================
-    [Header("━━━ Boss 牵制范围 → 覆盖己方塔 TowerLeashZone ━━━")]
-    [Tooltip("开启后本关启用牵制机制：玩家单位超出己方塔牵制半径时死亡并返还部分费用")]
-    public bool overrideLeashConfig = false;
-    public bool enableLeashZone = true;
-    [Tooltip("牵制半径（世界单位）")]
-    public float leashRange = 10f;
-    [Range(0f, 1f)]
-    [Tooltip("牵制死亡时返还的部署费用比例（0.5 = 返还一半）")]
-    public float leashCostRefundRatio = 0.5f;
-
-    // ==================== Boss 单位胜利 ====================
-    [Header("━━━ Boss 单位胜利（替代敌方塔摧毁判定） ━━━")]
-    [Tooltip("启用后：敌方塔被摧毁不再判胜，仅挂有 BossUnit 组件的敌方单位死亡触发胜利；玩家塔被摧毁仍判负")]
-    public bool useBossVictory = false;
-
     // ==================== Awake / Start ====================
 
     void Awake()
     {
+        LoadLevelConfig();
         ApplyBattleConfig();
         ApplyDeckConfig();
         ApplyBuffConfig();
-        ApplyLeashConfig();
     }
 
     void Start()
@@ -97,6 +81,49 @@ public class LevelSetup : MonoBehaviour
         ApplyTowerConfig();
         ApplyResourcePointConfig();
         ApplyGarrisonConfig();
+    }
+
+    /// <summary>
+    /// 运行时读取本关 LevelConfig 资产填充自身字段。
+    /// 资产由策划表工具从 CSV 导入生成（Resources/Config/LevelConfig_{场景名}.asset）；
+    /// 找不到时使用场景默认配置（不影响 Test/BeiFen 等无配置的场景）。
+    /// </summary>
+    private void LoadLevelConfig()
+    {
+        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        LevelConfig cfg = Resources.Load<LevelConfig>($"Config/LevelConfig_{sceneName}");
+        if (cfg == null)
+        {
+            Debug.Log($"LevelSetup: 未找到 {sceneName} 的 LevelConfig 资产，使用场景默认配置");
+            return;
+        }
+
+        if (cfg.availableCards != null && cfg.availableCards.Length > 0)
+        {
+            this.availableCards = cfg.availableCards;
+            this.overrideDeckConfig = true;
+        }
+
+        if (cfg.levelBuffs != null && cfg.levelBuffs.Length > 0)
+            this.levelBuffs = cfg.levelBuffs;
+
+        if (cfg.waveList != null)
+        {
+            this.waveList = cfg.waveList;
+            this.overrideWaveConfig = true;
+        }
+
+        if (cfg.overridePlayerTowerProps)
+        {
+            this.overridePlayerTowerProps = true;
+            this.playerTowerOverride = cfg.playerTowerOverride;
+        }
+
+        if (cfg.overrideEnemyTowerProps)
+        {
+            this.overrideEnemyTowerProps = true;
+            this.enemyTowerOverride = cfg.enemyTowerOverride;
+        }
     }
 
     // ==================== 配置应用方法 ====================
@@ -119,10 +146,6 @@ public class LevelSetup : MonoBehaviour
             bm.costAddSpeed = costAddSpeed;
             bm.nowCost = startingCost;
         }
-
-        // Boss 胜利模式：敌方塔摧毁不判胜，仅 BossUnit 死亡触发胜利
-        if (useBossVictory)
-            bm.useBossVictory = true;
 
         if (overrideWaveConfig && waveList != null)
             bm.waveList = waveList;
@@ -226,23 +249,4 @@ public class LevelSetup : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 将 Boss 牵制范围配置写入己方塔的 TowerLeashZone（若场景中有）
-    /// 注意：TowerLeashZone 挂在己方塔上，场景中不存在时此项配置无效果
-    /// </summary>
-    private void ApplyLeashConfig()
-    {
-        if (!overrideLeashConfig) return;
-
-        TowerLeashZone zone = FindObjectOfType<TowerLeashZone>();
-        if (zone == null)
-        {
-            Debug.LogWarning("LevelSetup: 场景中未找到 TowerLeashZone，跳过牵制范围配置");
-            return;
-        }
-
-        zone.enabled = enableLeashZone;
-        zone.leashRange = leashRange;
-        zone.costRefundRatio = leashCostRefundRatio;
-    }
 }

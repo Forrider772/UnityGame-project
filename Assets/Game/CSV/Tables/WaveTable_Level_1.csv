@@ -1,0 +1,6 @@
+﻿waveIndex,camp,unitID,pathID,spawnCount,spawnInterval,triggerType,delayBeforeStart
+1,Enemy,Enemy,Path_01,4,1,AfterPrevious,2
+2,Enemy,Enemy,Path_02,3,2,Concurrent,2
+3,Enemy,Enemy,Path_01,3,2,AfterPrevious,2
+4,Enemy,Enemy,Path_01,3,2,AfterPrevious,2
+5,Enemy,Enemy,Path_01,3,2,AfterPrevious,2
