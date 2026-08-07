@@ -2,117 +2,69 @@
 
 ## 1. 项目概述
 
-这是一个基于Unity 2D开发的卡牌塔防策略游戏。游戏核心玩法结合了卡牌召唤、单位沿路径移动、以及双塔攻防机制。
+这是一个基于 Unity 2D 开发的卡牌塔防策略游戏（Unity 2022.3.62f3c1）。核心玩法融合卡牌召唤、单位沿路径移动、双塔攻防，并包含剧情（Fungus）、波次、资源点/驻扎点争夺、Buff、Boss 关、路径传送等机制。
 
 **主要特性：**
-- 卡牌系统：支持卡牌选择、部署、冷却机制
-- 路径系统：多阵营路径管理与可视化
-- 波次系统：配置化敌人生成与路径分配
-- 战斗系统：单位属性、攻防机制、胜负判定
+- 卡牌系统：卡牌选择、部署、冷却机制、ToggleGroup 互斥选中
+- 路径系统：多阵营路径管理、可视化、曲线（Catmull-Rom）、循环、**传送段**
+- 波次系统：配置化敌人生成、多触发策略（AfterPrevious/Concurrent/Manual/AllUnitsDead）
+- 单位系统：v2 策略组件模式（UnitBrain + IMoveStrategy + ICombatStrategy），5 组件组合
+- 战斗系统：单位/塔属性、攻防结算、普通 & **Boss 胜利**判定、**牵制范围**机制
+- Buff 系统：属性修饰层（攻击/生命/移速/攻速/防御倍率）
+- 资源点/驻扎点：驻扎、占领、争夺机制
 - 存档系统：多栏位 JSON 存档，关卡进度持久化
+- 剧情系统：Fungus 对话 + 剧本导入工具
 - 菜单系统：新游戏/继续/加载/设置完整流程
-- 对话系统：剧情对话展示
 
 ---
 
 ## 2. 项目结构
 
-```json
+```text
 Assets/
-├── ArtResources/              # 美术资源
-│   ├── Fonts/                # 字体文件
-│   └── Deprecated/           # 弃用资源
-├── Dialogue/                 # 对话模块
-│   ├── DialogueAsset.cs      # 对话数据资产
-│   ├── DialogueManager.cs    # 对话管理器
-│   ├── DialogueStarter.cs    # 对话触发
-│   └── NPCInteract.cs        # NPC交互
-├── Level/                    # 关卡核心模块
-│   └── CommonLevel/
-│       ├── Battle/           # 战斗系统
-│       │   ├── BattleManager.cs
-│       │   └── TowerBase.cs
-│       ├── Camp/             # 阵营定义
-│       │   └── CampType.cs
-│       ├── Card/             # 卡牌系统
-│       │   ├── CardData.cs
-│       │   ├── CardDeploy.cs
-│       │   ├── CardInteraction.cs
-│       │   ├── CardManager.cs
-│       │   └── PlayerDeck.cs
-│       ├── Helper/           # 工具类
-│       │   ├── CatmullRomMath.cs
-│       │   ├── Math2DHelper.cs
-│       │   └── PathMath.cs
-│       ├── Path/             # 路径系统
-│       │   ├── LevelPathManager.cs
-│       │   ├── PathID.cs
-│       │   ├── PathManager.cs
-│       │   ├── PathMoveType.cs     # 路径移动类型 + 兼容性校验
-│       │   └── PathVisualManager.cs
-│       ├── ResourcePoint/    # 资源点系统
-│       │   ├── ResourcePoint.cs
-│       │   └── ResourcePointManager.cs
-│       ├── GarrisonPoint/    # 驻扎点系统
-│       │   ├── GarrisonPoint.cs
-│       │   ├── GarrisonPointManager.cs
-│       │   └── GarrisonPointPlacer.cs
-│       ├── UI/               # 战斗UI
-│       │   ├── GamePauseManager.cs
-│       │   ├── GameSettingsManager.cs
-│       │   └── HPBar.cs
-│       ├── LevelSetup/       # 关卡配置入口
-│       │   └── LevelSetup.cs
-│       └── Wave/             # 波次系统
-│           ├── WaveData.cs
-│           ├── WaveGenerator.cs
-│           ├── WaveList.cs
-│           └── WaveTriggerType.cs
-├── Menu/                     # 主菜单模块
-│   ├── MenuManager.cs        # 菜单核心逻辑
-│   ├── MenuSettingsManager.cs # 菜单设置管理
-│   └── SaveSlotPanel.cs      # 存档栏位选择面板
-├── Save/                     # 存档模块
-│   ├── GameSaveData.cs       # 存档数据结构
-│   ├── LevelRecord.cs        # 关卡记录
-│   └── SaveManager.cs        # 存档管理器（静态类）
-├── Scenes/                   # 场景
-│   ├── MenuScene.unity       # 主菜单场景
-│   ├── Level_1.unity         # 关卡1场景
-│   ├── TestLevelScene.unity  # 测试关卡场景
-│   └── GameStart/
-│       └── UiStart.cs
-├── TextMesh Pro/             # TextMeshPro插件
-├── Unit/                     # 单位系统
-│   ├── GenericScript/        # 保留不变的组件
-│   │   ├── UnitAttr.cs       # 单位属性数据
-│   │   ├── UnitUI.cs         # 血条UI
-│   │   └── FloatNumber.cs    # 浮动数字
-│   ├── NewScript/            # v2 新架构（策略组件模式）
-│   │   ├── UnitBrain.cs      # 状态机调度器
-│   │   ├── UnitState.cs      # 状态枚举
-│   │   ├── IMoveStrategy.cs  # 移动策略接口
-│   │   ├── ICombatStrategy.cs # 战斗策略接口
-│   │   ├── Bullet.cs         # 投射物（更新版）
-│   │   ├── Movement/
-│   │   │   ├── GroundMoveStrategy.cs   # 地面路径移动
-│   │   │   └── FlightMoveStrategy.cs   # 飞行路径移动
-│   │   └── Combat/
-│   │       ├── MeleeCombatStrategy.cs  # 近战策略
-│   │       ├── RangedCombatStrategy.cs # 远程射击策略
-│   │       └── HealerCombatStrategy.cs # 治疗策略
-│   └── Editor/
-│       └── UnitPrefabMigrator.cs  # 预制体一键迁移工具
-└── Deprecated/               # 弃用代码
-    ├── UnitAI.cs             # 旧AI决策组件
-    ├── UnitCombat.cs         # 旧战斗组件
-    ├── UnitMovement.cs       # 旧移动组件
-    ├── ArcherCombat.cs       # 旧射手特殊战斗
-    ├── MageCombat.cs         # 旧法师特殊战斗
-    ├── HealerCombat.cs       # 旧治疗特殊战斗
-    ├── CardDeployManager.cs
-    ├── CardItemUI.cs
-    └── UnitBase.cs
+├── Game/                          # 核心游戏代码（按模块分）
+│   ├── Level/                     # 关卡模块
+│   │   ├── CommonLevel/           # 通用战斗模块（被各关复用）
+│   │   │   ├── Battle/            # 战斗：BattleManager / TowerBase / BossUnit / TowerLeashZone / DamageCalculator
+│   │   │   ├── Buff/              # Buff：BuffData（SO）/ BuffManager
+│   │   │   ├── Camp/              # CampType.cs
+│   │   │   ├── Card/              # 卡牌：CardData / CardManager / CardInteraction / CardDeploy / PlayerDeck
+│   │   │   ├── GarrisonPoint/     # 驻扎点：Garrison（核心）/ GarrisonPoint / Manager / Placer
+│   │   │   ├── ResourcePoint/     # 资源点：ResourcePoint / ResourcePointManager
+│   │   │   ├── Path/              # 路径：PathManager(+Editor) / LevelPathManager / PathVisualManager / ConnectionType
+│   │   │   ├── Wave/              # 波次：WaveGenerator / WaveData / WaveList / WaveTriggerType
+│   │   │   ├── LevelSetup/        # 关卡统一配置入口（LevelSetup / InitialUnitPlacer / TowerOverrideConfig）
+│   │   │   ├── UI/                # HPBar / GamePauseManager / GameSettingsManager
+│   │   │   ├── Helper/            # Math2DHelper / PathMath / CatmullRomMath / RangeCircleDisplay / LeashCircleDisplay
+│   │   │   └── DefaultConfig/     # 默认配置资产（Buff / 卡牌 / WaveList）
+│   │   ├── Level_1~6/             # 各关卡：场景 + WaveList 资产
+│   │   └── LevelTest/             # 测试关卡
+│   ├── Menu/                      # 主菜单（MenuManager / SaveSlotPanel / MenuSettingsManager）
+│   ├── Save/                      # 存档（SaveManager / GameSaveData）
+│   ├── Story/                     # 剧情（StoryScene_Ch1/Ch2 + 剧本 txt）
+│   └── Unit/                      # 单位系统
+│       ├── Scripts/               # 单位脚本（按职责分）
+│       │   ├── Combat/            # ICombatStrategy / Base/Melee/Ranged/Healer / Bullet
+│       │   ├── Movement/          # IMoveStrategy / Base/Ground/Flight / MoveType
+│       │   ├── Core/              # UnitAttr / UnitBrain / UnitState / UnitHelper / UnitVisual
+│       │   └── UI/                # UnitUI / FloatNumber
+│       ├── CardAssets/            # 8 张卡牌资产
+│       ├── Editor/                # CardDataGenerator（一键生成卡牌数据）
+│       ├── Effects/               # Bullet / Fireball / HealEffect 预制体
+│       ├── GeneralUnit/           # 8 个单位预制体
+│       └── SpecialUnit/           # Boss.prefab
+├── ArtResources/                  # 美术资源（按类型分）
+│   ├── Fonts/                     # 中文字体 + SDF
+│   ├── GameMap/                   # 地图 Tilemap 资产
+│   ├── Map/                       # 关卡背景图
+│   ├── Portraits/                 # 对话立绘
+│   ├── UI/                        # （空）
+│   └── Unit Sprite/               # 单位贴图
+├── Editor/                        # 自建编辑器工具（ScriptToFungusTool 剧本导入）
+├── Deprecated/                    # 废弃代码（旧 Dialogue 对话系统）
+├── Scenes/                        # 附加场景（GameStart / Test）
+├── Fungus/                        # 第三方插件（剧情/对话）
+└── TextMesh Pro/                  # 第三方插件
 ```
 
 ---
@@ -125,19 +77,25 @@ Assets/
 
 | 单例类 | 职责 | 所在文件 |
 |--------|------|----------|
-| [BattleManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/Battle/BattleManager.cs) | 战斗核心管理、费用控制、胜负判定 | Battle/BattleManager.cs |
-| [CardManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardManager.cs) | 卡牌UI生成、选中管理 | Card/CardManager.cs |
-| [LevelPathManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/LevelPathManager.cs) | 场景路径收集与查询 | Path/LevelPathManager.cs |
-| [WaveGenerator](file:///d:/project/My%20project/Assets/Level/CommonLevel/Wave/WaveGenerator.cs) | 波次生成与单位生成 | Wave/WaveGenerator.cs |
-| [ResourcePointManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/ResourcePoint/ResourcePointManager.cs) | 资源点注册与费用增益计算 | ResourcePoint/ResourcePointManager.cs |
-| [GarrisonPointManager](file:///d:/project/My%20project/Assets/Level/CommonLevel/GarrisonPoint/GarrisonPointManager.cs) | 驻扎点创建与查询 | GarrisonPoint/GarrisonPointManager.cs |
-| [DialogueManager](file:///d:/project/My%20project/Assets/Dialogue/DialogueManager.cs) | 对话播放（跨场景持久化） | Dialogue/DialogueManager.cs |
+| [BattleManager](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Battle/BattleManager.cs) | 战斗核心管理、费用控制、胜负判定、通关剧情映射 | Game/Level/CommonLevel/Battle/BattleManager.cs |
+| [BuffManager](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Buff/BuffManager.cs) | 战斗 Buff 注册与应用 | Game/Level/CommonLevel/Buff/BuffManager.cs |
+| [CardManager](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Card/CardManager.cs) | 卡牌 UI 生成、选中管理 | Game/Level/CommonLevel/Card/CardManager.cs |
+| [LevelPathManager](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Path/LevelPathManager.cs) | 场景路径收集与查询 | Game/Level/CommonLevel/Path/LevelPathManager.cs |
+| [ResourcePointManager](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/ResourcePoint/ResourcePointManager.cs) | 资源点注册与费用增益计算 | Game/Level/CommonLevel/ResourcePoint/ResourcePointManager.cs |
+| [GarrisonPointManager](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/GarrisonPoint/GarrisonPointManager.cs) | 驻扎点创建与查询 | Game/Level/CommonLevel/GarrisonPoint/GarrisonPointManager.cs |
+| [TowerLeashZone](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Battle/TowerLeashZone.cs) | Boss 关牵制范围检测（属性式单例） | Game/Level/CommonLevel/Battle/TowerLeashZone.cs |
 
-### 3.2 静态管理器
+> 旧的 `DialogueManager`（手写对话单例）已废弃，位于 `Assets/Deprecated/Dialogue/`，请勿使用；剧情一律用 Fungus。
+
+### 3.2 静态管理器 / 工具
 
 | 静态类 | 职责 | 所在文件 |
 |--------|------|----------|
-| [SaveManager](file:///d:/project/My%20project/Assets/Save/SaveManager.cs) | 存档文件读写、多栏位管理 | Save/SaveManager.cs |
+| SaveManager | 存档文件读写、多栏位管理 | Game/Save/SaveManager.cs |
+| DamageCalculator | 伤害结算：`max(1, 伤害 - 对应防御)` | Game/Level/CommonLevel/Battle/DamageCalculator.cs |
+| UnitHelper | 单位生成时注入 camp/layer | Game/Unit/Scripts/Core/UnitHelper.cs |
+| MoveTypeHelper | 移动类型兼容性判断 | Game/Unit/Scripts/Movement/MoveType.cs |
+| Math2DHelper / PathMath / CatmullRomMath | 几何 / 直线路径 / 曲线数学 | Game/Level/CommonLevel/Helper/ |
 
 ### 3.3 系统依赖关系图
 
@@ -145,33 +103,32 @@ Assets/
 BattleManager (核心控制)
     ├── WaveGenerator (敌人生成)
     │   └── LevelPathManager (路径查询)
-    │       └── PathManager (单条路径)
+    │       └── PathManager (单条路径，含传送段)
     ├── CardManager (卡牌管理)
-    │   └── CardDeploy (卡牌部署)
-    │       └── LevelPathManager
-    ├── TowerBase (双塔攻防)
-    ├── ResourcePointManager (资源点管理)
-    │   └── ResourcePoint (单个资源点)
-    ├── GarrisonPointManager (驻扎点管理)
-    │   └── GarrisonPointPlacer (驻扎点放置)
-    └── SaveManager (胜利时自动存档)
+    │   └── CardDeploy (卡牌部署 → 记录 deployCost → 注册 TowerLeashZone)
+    ├── TowerBase (双塔攻防) ── BossUnit (Boss 死亡判胜)
+    ├── TowerLeashZone (牵制范围，单例)
+    ├── BuffManager (Buff 应用 → UnitAttr.Modified*)
+    ├── ResourcePointManager (资源点管理) ── Garrison (驻扎核心)
+    ├── GarrisonPointManager (驻扎点管理) ── Garrison
+    ├── LevelSetup (关卡统一配置分发)
+    └── SaveManager (胜利时自动存档 → LevelToStoryMap 剧情衔接)
 
 MenuManager (菜单控制)
-    ├── SaveSlotPanel (栏位选择UI)
-    │   └── SaveManager (存档读写)
+    ├── SaveSlotPanel (栏位选择UI) ── SaveManager
     ├── MenuSettingsManager (设置面板)
-    └── GameSettingsManager (关卡内设置)
+    └── 新游戏 → StoryScene_Ch1 (Fungus 剧情) → Level_1
 
 单位系统 (v2 策略组件模式):
-    UnitAttr (属性数据)
-    UnitBrain (状态机调度器)
+    UnitAttr (属性数据 + Buff 修饰层)
+    UnitUI (血条)
+    UnitBrain (状态机调度器 + 事件系统)
     ├── IMoveStrategy (移动策略)
-    │   ├── GroundMoveStrategy (地面沿路径)
-    │   └── FlightMoveStrategy (飞行沿路径)
+    │   ├── GroundMoveStrategy / FlightMoveStrategy
+    │   └── BaseMoveStrategy (两阶段移动 + 传送状态机)
     └── ICombatStrategy (战斗策略)
-        ├── MeleeCombatStrategy (近战)
-        ├── RangedCombatStrategy (远程投射)
-        └── HealerCombatStrategy (治疗)
+        ├── MeleeCombatStrategy / RangedCombatStrategy / HealerCombatStrategy
+        └── BaseCombatStrategy (攻击节奏 + 统一伤害结算)
 ```
 
 ---
@@ -182,25 +139,28 @@ MenuManager (菜单控制)
 
 #### 4.1.1 BattleManager
 
+**文件：** `Assets/Game/Level/CommonLevel/Battle/BattleManager.cs`
+
 **职责：**
 - 管理关卡流程与游戏状态
-- 控制费用自动增长与使用
+- 控制费用自动增长与使用（`UseCost` 扣费 / `AddCost` 加费，均不超过上限）
 - 双塔存活状态管理
 - 胜负判定与游戏结束面板
-- 胜利时自动存档并推进关卡
+- 胜利时自动存档，并通过 `LevelToStoryMap` 判断是否先播剧情
+- **Boss 胜利模式**：`useBossVictory=true` 时敌方塔摧毁不判胜，仅 BossUnit 死亡判胜
 
 **核心方法：**
 
 | 方法 | 功能 |
 |------|------|
 | `UseCost(int cost)` | 消耗费用，返回是否成功 |
+| `AddCost(float amount)` | 增加费用（牵制死亡返还用），不超过上限 |
 | `CheckWin()` | 胜负判定，由塔死亡时触发 |
-| `GameWin()` | 暂停时间 → MarkLevelCompleted 存档 → 显示胜利面板 |
+| `OnBossDefeated()` | Boss 单位死亡时调用（由 `BossUnit` 触发），直接判胜 |
+| `GameWin()` | 暂停时间 → MarkLevelCompleted 存档 → 判断剧情衔接 → 显示胜利面板 |
 | `GameLose()` | 暂停时间 → 显示失败面板 |
-| `OnWinNextLevel()` | 胜利面板 — 加载下一关 |
-| `OnWinMainMenu()` | 胜利面板 — 返回主菜单 |
-| `OnLoseRetry()` | 失败面板 — 重新加载当前关卡 |
-| `OnLoseMainMenu()` | 失败面板 — 返回主菜单 |
+| `OnWinNextLevel()` / `OnWinMainMenu()` | 胜利面板 — 下一关 / 主菜单 |
+| `OnLoseRetry()` / `OnLoseMainMenu()` | 失败面板 — 重试 / 主菜单 |
 
 **关键字段：**
 
@@ -210,11 +170,15 @@ public float maxCost = 10f;        // 费用上限
 public float costAddSpeed = 1f;    // 费用增长速度
 public bool playerTowerAlive;      // 玩家塔存活状态
 public bool enemyTowerAlive;       // 敌方塔存活状态
-// 胜利/失败面板
+[HideInInspector] public bool useBossVictory;  // Boss 胜利模式开关（LevelSetup 设置）
+private static readonly Dictionary<string,string> LevelToStoryMap; // 通关剧情映射
+// 当前映射：{ "Level_1" → "StoryScene_Ch2" }
 public GameObject winPanel / losePanel;
 ```
 
 #### 4.1.2 TowerBase
+
+**文件：** `Assets/Game/Level/CommonLevel/Battle/TowerBase.cs`
 
 **职责：**
 - 防御塔血量、攻击、索敌
@@ -230,15 +194,36 @@ public GameObject winPanel / losePanel;
 | `AttackLogic()` | 攻击冷却与伤害结算 |
 | `Die()` | 死亡逻辑，标记胜负 |
 
+#### 4.1.3 BossUnit（Boss 标记）
+
+**文件：** `Assets/Game/Level/CommonLevel/Battle/BossUnit.cs`
+
+挂任意单位标记为 Boss，订阅 `UnitBrain.OnDeath`，死亡时调用 `BattleManager.Instance.OnBossDefeated()`。与 `BattleManager.useBossVictory` 配合实现 **Boss 死亡判胜**。
+
+> ⚠️ 当前状态：`useBossVictory` 已在 Level_6 开启，但 `SpecialUnit/Boss.prefab` **尚未被任何波次/场景引用**，Boss 实际出场未接线（开发中）。
+
+#### 4.1.4 TowerLeashZone（牵制范围）
+
+**文件：** `Assets/Game/Level/CommonLevel/Battle/TowerLeashZone.cs`（单例）
+
+挂在己方塔上。`CardDeploy` 部署单位后 `RegisterUnit(brain)` 注册；每 `checkInterval` 检测单位与塔距离，超出 `leashRange` → 返还 `deployCost × costRefundRatio` 费用（`BattleManager.AddCost`）→ `UnitBrain.Die()` 走正常死亡。传送中的单位跳过检测。
+
+#### 4.1.5 DamageCalculator（伤害结算）
+
+**文件：** `Assets/Game/Level/CommonLevel/Battle/DamageCalculator.cs`（静态）
+
+```csharp
+最终伤害 = Mathf.Max(1, 伤害 - 对应防御)
+// 物理伤害减 physicalDefense，法术伤害减 magicDefense
+```
+
 ---
 
 ### 4.2 卡牌系统 (Card)
 
-#### 4.2.1 CardData
+**文件路径：** `Assets/Game/Level/CommonLevel/Card/`，卡牌资产在 `Assets/Game/Unit/CardAssets/`
 
-**职责：** 卡牌数据配置容器（ScriptableObject）
-
-**字段说明：**
+#### 4.2.1 CardData（ScriptableObject）
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -250,42 +235,17 @@ public GameObject winPanel / losePanel;
 | `icon` | Sprite | 卡牌图标 |
 | `unitPrefab` | GameObject | 召唤的单位预制体 |
 
-#### 4.2.2 CardManager
+#### 4.2.2 CardManager（单例）
 
-**职责：**
-- 生成卡牌UI
-- 管理卡牌选中状态
-- 卡牌列表维护
-
-**核心方法：**
-
-| 方法 | 功能 |
-|------|------|
-| `RefreshAllCards()` | 刷新所有卡牌UI |
-| `OnCardClicked(CardInteraction)` | 处理卡牌点击 |
-| `DeselectCurrentCard()` | 取消选中卡牌 |
+**职责：** 生成卡牌 UI、ToggleGroup 互斥选中、卡牌列表维护。
 
 #### 4.2.3 CardInteraction
 
-**职责：**
-- 卡牌UI显示与交互
-- 冷却计时与视觉反馈
-- 选中/取消选中状态管理
-
-**核心方法：**
-
-| 方法 | 功能 |
-|------|------|
-| `Init(CardData data)` | 初始化卡牌数据 |
-| `Select()` / `Deselect()` | 设置选中/取消选中 |
-| `StartCooldown()` | 开始冷却计时 |
+**职责：** 卡牌 UI 显示与交互、冷却计时与视觉反馈、选中/取消选中、费用不足提示。
 
 #### 4.2.4 CardDeploy
 
-**职责：**
-- 卡牌部署流程控制
-- 路线显示与高亮
-- 单位生成与路径分配
+**职责：** 卡牌部署流程控制、路线显示与高亮、单位生成与路径分配、记录 `deployCost` 并注册 `TowerLeashZone`。
 
 **部署流程：**
 1. 玩家选中卡牌 → 进入部署模式，显示同阵营路线
@@ -297,55 +257,58 @@ public GameObject winPanel / losePanel;
 
 ### 4.3 路径系统 (Path)
 
+**文件路径：** `Assets/Game/Level/CommonLevel/Path/`
+
 #### 4.3.1 PathManager
 
 **职责：**
-- 单条路径数据管理
+- 单条路径数据管理（partial class，编辑器扩展在 `PathManager.Editor.cs`）
 - 路径可视化控制（运行时 + 编辑器）
 - 提供路径点查询接口
 - **Centripetal Catmull-Rom 曲线支持**
+- **传送段支持**（`ConnectionType.Walk/Teleport`）
 
 **Inspector 配置字段：**
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `camp` | CampType | 所属阵营 |
-| `pathId` | PathID | 路线唯一标识 |
-| `pathPoints` | List\<Transform\> | 路径点列表（子物体） |
-| `useCurve` | bool | 启用曲线（默认 false = 直线） |
-| `curveAlpha` | float | 曲线参数化指数（0.5=centripetal） |
-| `curveSamples` | int | LineRenderer 采样精度（默认15） |
+| `pathId` | PathID | 路线唯一标识（Path_01~05）|
+| `pathPoints` | List\<Transform\> | 路径点列表（子物体）|
+| `useCurve` | bool | 启用曲线（默认 false = 直线）|
+| `curveAlpha` | float | 曲线参数化指数（0.5=centripetal）|
+| `curveSamples` | int | LineRenderer 采样精度 |
+| `isLooping` | bool | 循环路径 |
+| `connectionTypes` | List\<ConnectionType\> | 每段连接类型（Walk/Teleport）|
+| `teleportTime` | float | 传送段等待时长 |
 
 **公共 API：**
 
 | 方法 | 功能 |
 |------|------|
-| `SetVisible(bool)` | 设置路线是否可见 |
-| `SetHighlight(bool)` | 设置路线高亮状态 |
-| `GetStartPoint()` | 获取路线起点坐标 |
-| `GetWaypoints2D()` | 获取路径点（曲线模式返回密集采样） |
-| `GetCurvePoint(float t)` | 归一化距离 [0,1] → 曲线上的世界坐标 |
+| `SetVisible(bool)` / `SetHighlight(bool)` | 路径可见/高亮 |
+| `GetStartPoint()` | 路径起点坐标 |
+| `GetWaypoints2D()` | 路径点（曲线模式返回密集采样）|
+| `GetCurvePoint(float t)` | 归一化距离 → 曲线世界坐标 |
 | `GetCurveTangent(float t)` | 归一化距离 → 切线方向 |
 | `GetTotalArcLength()` | 路径总弧长 |
-| `GetClosestPoint(Vector2)` | 点到路径最近点（Newton 迭代，不采样） |
-
-**编辑器功能：**
-- `[SelectionBase]`：点击子路径点自动选中父级 PathManager
-- **选中高亮**：金黄粗线 + 实心方向箭头 + 路径标签
-- **未选中**：半透明蓝细线 + 空心方向箭头
-- **右键菜单**：复制路径（反向/切换阵营/两者组合）
+| `GetClosestPoint(Vector2)` | 点到路径最近点（Newton 迭代）|
+| `GetSegmentAtProgress(float t)` | 当前所在路径段（修复传送死循环）|
+| `GetConnectionType(int segment)` | 某段的连接类型 |
 
 **曲线系统设计：**
-- 采用 Centripetal Catmull-Rom（alpha=0.5），路径点间距不均时无尖角/回环
-- 弧长用 Gauss-Legendre 5 点求积预计算
-- 最近点用粗扫 + Newton 迭代（每段 7 次求值，远少于密集采样）
+- Centripetal Catmull-Rom（alpha=0.5），路径点间距不均时无尖角/回环
+- 弧长用 Gauss-Legendre 5 点求积预计算；最近点用粗扫 + Newton 迭代
 - 段内弧长→s 映射表（LUT）保证匀速运动
 
-#### 4.3.2 LevelPathManager
+#### 4.3.2 传送段（ConnectionType.Teleport）
 
-**职责：**
-- 场景内所有路径收集
-- 按阵营+路线ID查询路径
+- 单位进入传送段：`BaseMoveStrategy.BeginTeleport()`（隐藏 + 关碰撞 + 隐藏血条）→ 段起点等待 `teleportTime` → 瞬移到段终点。
+- **传送期间完全无敌**（`UnitBrain.TakeDamage` 忽略一切伤害），跳过索敌/驻扎检测。
+- 编辑器可视化：传送段紫色虚线 + 段起点菱形 + "传送"标签。
+- 已配置：`Level_5`（12 处）、`Level_6`（18 处）。
+
+#### 4.3.3 LevelPathManager（单例）
 
 **核心数据结构：**
 
@@ -355,75 +318,26 @@ Dictionary<CampType, Dictionary<PathID, PathManager>> campPathDict
 // 第二层：路线ID → 具体路径对象
 ```
 
-**查询接口：**
+**查询接口：** `GetPath(camp, pathId)`、`GetAllPathsByCamp(camp)`
 
-| 方法 | 功能 |
-|------|------|
-| `GetPath(CampType camp, PathID pathId)` | 获取指定路径 |
-| `GetAllPathsByCamp(CampType camp)` | 获取阵营所有路径 |
+#### 4.3.4 驻扎 / 资源点
 
-#### 4.3.3 PathVisualManager
+**驻扎核心 `Garrison`**（`GarrisonPoint/Garrison.cs`）：可复用的驻扎/占领/争夺逻辑，`ResourcePoint` 与 `GarrisonPoint` 都委托它。
 
-**职责：**
-- 运行时路径 LineRenderer 视觉效果
-- 支持颜色切换、脉冲宽度动画
-
-**配置字段：**
-
-| 字段 | 说明 |
-|------|------|
-| `effect` | 效果类型（ColorChange/WidthPulse/ColorAndPulse） |
-| `normalColor` / `highlightColor` | 普通/高亮颜色 |
-| `normalWidth` / `highlightWidth` | 普通/高亮线宽 |
-| `pulseSpeed` | 脉冲动画速度 |
-
-#### 4.3.4 驻扎点 (GarrisonPoint)
-
-**GarrisonPoint** — 动态创建的驻扎点组件，可吸附到路径上。
-
-**配置字段：**
-
-| 字段 | 说明 |
-|------|------|
-| `effectiveCamps` | 对哪些阵营生效（可多选） |
-| `garrisonRange` | 驻扎范围半径 |
-| `maxGarrison` | 最大驻扎人数 |
-| `boundPath` | 绑定的路径（吸附目标） |
-| `boundCurveT` | 归一化曲线距离 [0,1]（支持曲线定位） |
-
-**GarrisonPointManager** — 场景级单例，管理驻扎点创建/查询/删除。
-
-**核心方法：**
-
-| 方法 | 功能 |
-|------|------|
-| `CreateGarrisonPoint(pos, camps)` | 在坐标创建驻扎点（自动吸附最近路径） |
-| `CreateGarrisonPointOnPath(path, curveT, camps)` | 在路径指定位置创建驻扎点 |
-| `GetNearestGarrisonPoint(pos, camp)` | 获取对阵营生效的最近驻扎点 |
-| `RemoveGarrisonPoint(gp)` | 移除驻扎点 |
-
-**GarrisonPointPlacer** — 驻扎点放置交互（鼠标悬停→点击创建）。
+- **资源点**（`ResourcePoint.cs`）：场景固定位置，单位驻扎获得费用增益；驻扎/争夺规则见 README 第 7 章。
+- **驻扎点**（`GarrisonPoint.cs` + `GarrisonPointManager.cs` 单例 + `GarrisonPointPlacer.cs`）：动态创建、吸附路径、按阵营生效。
 
 ---
 
 ### 4.4 波次系统 (Wave)
 
-#### 4.4.1 WaveGenerator
+**文件路径：** `Assets/Game/Level/CommonLevel/Wave/`
 
-**职责：**
-- 按配置生成波次
-- 分配单位路径
-- 控制生成间隔
+#### 4.4.1 WaveGenerator（单例）
 
-**生成流程：**
-1. 读取波次列表配置
-2. 按阵营和路径ID获取真实路径
-3. 生成单位并设置路径
-4. 波次间固定间隔2秒
+按配置生成波次、分配单位路径、控制生成间隔。触发策略：`AfterPrevious / Concurrent / Manual / AllUnitsDead`，均支持 `delayBeforeStart`。
 
 #### 4.4.2 WaveData
-
-**配置字段：**
 
 | 字段 | 说明 |
 |------|------|
@@ -432,6 +346,8 @@ Dictionary<CampType, Dictionary<PathID, PathManager>> campPathDict
 | `unitPrefab` | 单位预制体 |
 | `spawnCount` | 生成数量 |
 | `spawnInterval` | 生成间隔 |
+| `triggerType` | 触发类型 |
+| `delayBeforeStart` | 触发后额外延迟 |
 
 ---
 
@@ -439,6 +355,9 @@ Dictionary<CampType, Dictionary<PathID, PathManager>> campPathDict
 
 > 单位系统 v1 的 `UnitAI`/`UnitCombat`/`UnitMovement`/`ArcherCombat`/`MageCombat`/`HealerCombat` 已废弃，移入 `Assets/Deprecated/`。
 > 新架构采用 **策略组件模式**：`UnitBrain`（状态机） + `IMoveStrategy`（移动策略） + `ICombatStrategy`（战斗策略）。
+
+**脚本目录：** `Assets/Game/Unit/Scripts/{Combat,Movement,Core,UI}/`
+**预制体目录：** `Assets/Game/Unit/GeneralUnit/`（8 个）、`SpecialUnit/`（Boss）、`Effects/`（特效）
 
 #### 4.5.1 架构概览
 
@@ -448,7 +367,7 @@ Dictionary<CampType, Dictionary<PathID, PathManager>> campPathDict
 
 ```
                     ┌─────────────┐
-                    │  UnitBrain  │  纯状态机调度器
+                    │  UnitBrain  │  纯状态机调度器 + 事件系统
                     │  (状态机)    │  不包含任何具体逻辑
                     └──┬───────┬──┘
                        │       │
@@ -456,118 +375,120 @@ Dictionary<CampType, Dictionary<PathID, PathManager>> campPathDict
               │IMoveStrategy│ │ICombatStrategy│
               │ SetPath()  │  │ DetectTarget()│
               │ Move()     │  │ TryExecute()  │
-              │ Stop/Resume│  │ SetTowerTarget│
-              │ MoveToward()│ │ TakeDamage() │
+              │ MoveToward()│ │ TakeDamage()  │
+              │ IsTeleporting│ │ SetTowerTarget│
               └──┬─────────┘ └──┬───────────┘
                  │              │
     ┌────────────▼──┐  ┌───────┴──────────┐
-    │GroundMoveStrat │  │MeleeCombatStrat  │
-    │FlightMoveStrat │  │RangedCombatStrat │
-    └───────────────┘  │HealerCombatStrat │
+    │BaseMoveStrategy│  │BaseCombatStrategy│
+    │ ├Ground/Flight │  │ ├Melee           │
+    │ └传送状态机     │  │ ├Ranged          │
+    └───────────────┘  │ └Healer          │
                        └──────────────────┘
 ```
 
 #### 4.5.2 状态机
 
+`UnitState`：`Moving / Advancing / Fighting / Garrisoned / AttackingTower / Dead`
+
 ```
 Moving ──┬── DetectTarget() 找到敌人 ──► Fighting
          ├── 进入驻扎点/资源点范围 ────► Garrisoned
-         ├── path 走完 ───────────────► AttackingTower
+         ├── 路径走完 ────────────────► Advancing
          └── hp ≤ 0 ──────────────────► Dead
 
-Fighting ──┬── DetectTarget() 无敌人 ─► Moving
-           └── hp ≤ 0 ─────────────────► Dead
+Advancing ──┬── DetectTarget() 找到敌人 ─► Fighting
+            ├── 塔在攻击范围 ────────────► AttackingTower
+            ├── 塔太远 ─────────────────► 向塔推进（MoveToward）
+            └── hp ≤ 0 ─────────────────► Dead
+
+Fighting ──┬── DetectTarget() 无敌人 ─►（路径未完 → Moving，已完 → Advancing）
+           └── hp ≤ 0 ────────────────► Dead
 
 Garrisoned ──┬── DetectTarget() 找到敌人 → Fighting（离开驻扎）
              └── hp ≤ 0 ───────────────────► Dead
 
-AttackingTower ──┬── tower 被毁 ───► Moving
-                 └── hp ≤ 0 ────────► Dead
+AttackingTower ──┬── 目标超出范围/丢失 ─► Advancing
+                 └── hp ≤ 0 ────────────► Dead
 ```
 
 #### 4.5.3 UnitBrain（状态机调度器）
 
-**文件：** `Assets/Unit/NewScript/UnitBrain.cs`
+**文件：** `Assets/Game/Unit/Scripts/Core/UnitBrain.cs`
 
 **职责：** 纯行为调度，不包含移动/战斗/驻扎逻辑。在 `Awake()` 中通过 `GetComponent<IMoveStrategy>()` 和 `GetComponent<ICombatStrategy>()` 获取策略组件。
+
+**事件系统（供音效/特效/UI 挂载）：**
+
+| 事件 | 触发时机 |
+|------|----------|
+| `OnStateChanged(UnitState, UnitState)` | 状态切换 (旧, 新) |
+| `OnStateEnter` / `OnStateExit` | 进入/离开状态 |
+| `OnDeath(GameObject)` | 死亡前 |
+| `OnDamageTaken(float, AttackType)` | 受到伤害 |
+| `OnAttackHit` / `OnMoveStart` / `OnPathComplete` | 攻击命中 / 开始移动 / 路径走完 |
 
 **核心方法：**
 
 | 方法 | 功能 |
 |------|------|
-| `TakeDamage(float dmg, AttackType type)` | 外部调用入口，委托给 CombatStrategy 结算减伤后刷新血条 |
+| `TakeDamage(float dmg, AttackType type)` | 伤害入口；**传送中完全无敌**，委托 CombatStrategy 结算后刷新血条 |
 | `SetPath(PathManager path)` | 委托给 MoveStrategy |
-| `StopMovement()` / `ResumeMovement()` | 委托给 MoveStrategy（驻扎用） |
+| `SetPathFromPosition(path, pos)` | 定位到最近点（初始布阵用）|
+| `StopMovement()` / `ResumeMovement()` | 驻扎用 |
+| `Die()` | 死亡序列（公开，牵制等外部系统可触发）：切 Dead → OnDeath → 淡出 0.3s → 销毁 |
+| `IsTeleporting()` | 是否传送中（Boss 关牵制检测应跳过）|
 
-#### 4.5.4 移动策略 (IMoveStrategy)
+#### 4.5.4 移动策略 (IMoveStrategy / BaseMoveStrategy)
 
-**接口定义：** `Assets/Unit/NewScript/IMoveStrategy.cs`
+**接口：** `Assets/Game/Unit/Scripts/Movement/IMoveStrategy.cs`
 
 | 方法 | 功能 |
 |------|------|
 | `SetPath(PathManager)` | 绑定路径，缓存总弧长 |
-| `Move(float dt, float speed)` | 沿路径匀速推进（弧长参数化） |
-| `Stop()` / `Resume()` | 暂停/恢复（驻扎用） |
-| `IsPathCompleted()` | 路径是否走完（循环路径永远 false） |
-| `MoveToward(Vector2 target, float speed)` | 战斗追击移动 |
+| `Move(float dt, float speed)` | 沿路径匀速推进 |
+| `MoveToward(Vector2 target, float speed)` | 战斗追击 / 向塔推进 |
+| `Stop()` / `Resume()` | 暂停/恢复（驻扎用）|
+| `IsPathCompleted()` | 路径是否走完 |
+| `IsTeleporting { get; }` | 是否处于传送中 |
+
+**抽象基类：** `BaseMoveStrategy` — 两阶段移动（寻路接近 + 路径跟随）、追击回归、**传送状态机**（`BeginTeleport` → 等待 → 瞬移）。
 
 **实现：**
 
 | 实现 | 文件 | 说明 |
 |------|------|------|
-| `GroundMoveStrategy` | `Movement/GroundMoveStrategy.cs` | 沿 PathManager 路径弧长推进（支持曲线/直线/循环） |
+| `GroundMoveStrategy` | `Movement/GroundMoveStrategy.cs` | 沿 PathManager 路径弧长推进（支持曲线/直线/循环/传送）|
 | `FlightMoveStrategy` | `Movement/FlightMoveStrategy.cs` | 沿 Flight 类型路径推进，不旋转朝向 |
 
-#### 4.5.5 战斗策略 (ICombatStrategy)
+**MoveType**（`Movement/MoveType.cs`）：`Ground` / `Flying`（预留 `Water`）。`MoveTypeHelper.IsPathCompatible(pathType, unitType)`：地面单位只能走 Ground 路径，飞行单位可走 Ground+Flying。
 
-**接口定义：** `Assets/Unit/NewScript/ICombatStrategy.cs`
+#### 4.5.5 战斗策略 (ICombatStrategy / BaseCombatStrategy)
 
-| 方法 | 功能 |
-|------|------|
-| `DetectTarget(UnitAttr, Vector2)` | 在 detectRange 内搜寻最近敌人，近战跳过飞行单位 |
-| `TryExecute(Transform, dt, ...)` | 执行攻击/治疗行动 |
-| `SetTowerTarget(UnitAttr)` | 路径走完后锁定敌方防御塔 |
-| `TakeDamage(damage, type, attr, onDie)` | 结算防御减伤、扣血、死亡回调 |
+**接口：** `Assets/Game/Unit/Scripts/Combat/ICombatStrategy.cs`
+
+**抽象基类：** `BaseCombatStrategy` — 攻击节奏（`Idle → Windup → Recovery → IdleWait`）、索敌缓存、统一伤害结算、`AttackPhase` 私有枚举。
 
 **实现：**
 
 | 实现 | 文件 | 说明 |
 |------|------|------|
 | `MeleeCombatStrategy` | `Combat/MeleeCombatStrategy.cs` | 索敌(按距离排序) + 追击 + 近战挥砍 + 防御结算 |
-| `RangedCombatStrategy` | `Combat/RangedCombatStrategy.cs` | 索敌(按距离排序) + 追击 + 生成投射物。伤害类型从 `UnitAttr.attackType` 读取 |
-| `HealerCombatStrategy` | `Combat/HealerCombatStrategy.cs` | 找血量%最低的友方 + 治疗。无目标时让状态机回 Moving |
-
-**RangedCombatStrategy Inspector 配置：**
-
-| 字段 | 说明 |
-|------|------|
-| `bulletPrefab` | 投射物预制体 |
-| `bulletSpeed` | 投射物飞行速度 |
-| `spawnHeightOffset` | 发射点高度偏移 |
-
-**HealerCombatStrategy Inspector 配置：**
-
-| 字段 | 说明 |
-|------|------|
-| `healAmount` | 每次治疗量 |
-| `healRange` | 治疗范围半径 |
-| `healCooldown` | 治疗冷却时间 |
-| `healEffectPrefab` | 治疗特效预制体 |
-| `effectHeightOffset` | 特效高度偏移 |
-| `canHealSelf` | 是否可治疗自己 |
+| `RangedCombatStrategy` | `Combat/RangedCombatStrategy.cs` | 索敌 + 追击 + 生成 Bullet 投射物，伤害类型从 `UnitAttr.attackType` 读取 |
+| `HealerCombatStrategy` | `Combat/HealerCombatStrategy.cs` | 找血量%最低的友方 + 治疗。无目标时让状态机回 Moving/Advancing |
 
 #### 4.5.6 各兵种组合
 
 | 兵种 | MoveStrategy | CombatStrategy |
 |------|-------------|----------------|
-| soldier / hound / Mechs / Enemy2 | GroundMoveStrategy | MeleeCombatStrategy |
+| soldier / hound / Mechs / Enemy | GroundMoveStrategy | MeleeCombatStrategy |
 | FlyingUnit | **FlightMoveStrategy** | MeleeCombatStrategy |
 | Archer / Mage | GroundMoveStrategy | RangedCombatStrategy |
 | Healer | GroundMoveStrategy | HealerCombatStrategy |
 
 #### 4.5.7 UnitAttr（属性数据）
 
-**文件：** `Assets/Unit/GenericScript/UnitAttr.cs`（保留不变）
+**文件：** `Assets/Game/Unit/Scripts/Core/UnitAttr.cs`
 
 **核心属性：**
 
@@ -582,84 +503,51 @@ public float detectRange = 3f;         // 索敌范围
 public AttackType attackType;          // 攻击类型 (Physical/Magic)
 public float physicalDefense;          // 物理防御减伤
 public float magicDefense;             // 法术防御减伤
-public UnitType unitType;              // Ground / Flying
-public AttackRangeType attackRangeType; // Melee / Ranged
+public MoveType moveType;              // 移动类型 (Ground/Flying)
+public AttackRangeType attackRangeType;// 攻击范围类型 (Melee/Ranged)
+public int deployCost;                 // 部署费用（牵制死亡返还用，CardDeploy 设置）
 ```
 
-#### 4.5.8 Bullet（投射物）
+**Buff 修饰层：** `atkMultiplier / maxHpMultiplier / moveSpeedMultiplier / atkSpeedMultiplier / physicalDefenseMultiplier / magicDefenseMultiplier`，对外提供 `ModifiedAtk / ModifiedMaxHp / ModifiedMoveSpeed / ModifiedAtkCD`（倍率累乘）。`BuffManager.ApplyBuffs()` 调用后触发 `SyncDebugDisplay()` 同步到 Inspector 调试区。
 
-**文件：** `Assets/Unit/NewScript/Bullet.cs`
+#### 4.5.8 UnitVisual / UnitUI
 
-v2 改进：
-- 检查目标存活状态（`targetAttr.currentHp <= 0`），不攻击尸体
-- 伤害通过 `GetComponent<UnitBrain>().TakeDamage()` 或 `GetComponent<TowerBase>().TakeDamage()` 结算
+- **UnitVisual**（`Core/UnitVisual.cs`）：受击闪红视觉。
+- **UnitUI**（`UI/UnitUI.cs`）：血条生成、刷新、销毁、`SetHpBarVisible()`（传送期间隐藏血条）。血条预制体由 `UnitAttr.hpBarPrefab` 指定，绑定 `BattleCanvas`。
+
+#### 4.5.9 Bullet（投射物）
+
+**文件：** `Assets/Game/Unit/Scripts/Combat/Bullet.cs`
+
+- 检查目标存活状态（`currentHp <= 0`），不攻击尸体
+- 伤害通过 `UnitBrain.TakeDamage()` 或 `TowerBase.TakeDamage()` 结算
 - 伤害类型从发射方配置传递（`RangedCombatStrategy` 读取 `UnitAttr.attackType`）
-
-#### 4.5.9 v2 vs v1 差异总结
-
-| 方面 | v1（旧） | v2（新） |
-|------|---------|---------|
-| 组件数量 | 5-7 个（含特殊变体接管模式） | 统一 5 个 |
-| 索敌排序 | 不排序，取第一个 | 按距离排序，取最近 |
-| 攻击冷却 | UnitCombat.Update 始终运行；特殊变体只在范围内 | 所有 CombatStrategy.Update 始终运行 |
-| Mage 伤害类型 | 硬编码 Magic | 读取 `UnitAttr.attackType` |
-| Bullet 存活检查 | 只检查 null | 检查 `currentHp <= 0` |
-| 飞行单位 | free-flight 到硬编码坐标 | 沿 Flight 类型 PathManager 路径 |
-| 远程追击 | 无 | `RangedCombatStrategy.TryExecute` 含追击 |
-| Healer 接管方式 | 禁用 UnitAI + UnitCombat | HealerCombatStrategy 作为一等策略 |
 
 ---
 
 ### 4.6 存档系统 (Save)
 
-#### 4.6.1 SaveManager
+**文件路径：** `Assets/Game/Save/`
 
-**职责：**
-- 静态存档管理器，全局访问
-- 支持 3 个存档栏位（0~2），JSON 格式持久化
-- 文件路径：`Application.persistentDataPath/gamesave_{slotIndex}.json`
+#### 4.6.1 SaveManager（静态）
 
-**核心方法：**
+- 支持 3 个存档栏位（0~2），JSON 格式，路径 `Application.persistentDataPath/gamesave_{slotIndex}.json`
+- `levelSceneOrder = { "Level_1", "Level_2" }`（当前仅两关可推进）
 
-| 方法 | 功能 |
-|------|------|
-| `HasSave(int slotIndex)` | 检查指定栏位是否有存档 |
-| `LoadSave(int slotIndex)` | 读取指定栏位存档，失败返回 null |
-| `SaveGame(GameSaveData, int)` | 保存存档到指定栏位，自动记录时间 |
-| `DeleteSave(int slotIndex)` | 删除指定栏位存档 |
-| `CreateNewGame()` | 创建全新存档数据（所有关卡未完成，当前=第一关） |
-| `MarkLevelCompleted(string, int)` | 标记关卡完成，自动推进到下一关 |
-| `HasAnySave()` | 检查是否存在任何存档 |
-| `GetLatestSaveSlot()` | 获取最新存档栏位索引，无存档返回 -1 |
-
-**关键字段：**
-
-```csharp
-public const int SlotCount = 3;            // 存档栏位数
-public static int CurrentSlotIndex;        // 当前游玩的栏位（MenuManager 设置）
-```
+**核心方法：** `HasSave / LoadSave / SaveGame / DeleteSave / CreateNewGame / MarkLevelCompleted / HasAnySave / GetLatestSaveSlot`
 
 #### 4.6.2 GameSaveData
-
-**数据结构：**
 
 ```csharp
 [System.Serializable]
 public class GameSaveData
 {
-    public int saveVersion = 1;            // 存档版本号
-    public int slotIndex;                  // 所属栏位
-    public string saveTime;                // 存档时间
-    public int currentLevelIndex;          // 当前关卡索引
-    public string currentLevelScene;       // 当前关卡场景名
-    public List<LevelRecord> levelRecords; // 关卡完成记录列表
-}
-
-[System.Serializable]
-public class LevelRecord
-{
-    public string levelScene;              // 关卡场景名
-    public bool isCompleted;               // 是否已完成
+    public int saveVersion;            // 存档版本号
+    public int slotIndex;              // 所属栏位
+    public string saveTime;            // 存档时间
+    public int currentLevelIndex;      // 当前关卡索引
+    public string currentLevelScene;   // 当前关卡场景名
+    public List<LevelRecord> levelRecords; // 关卡完成记录
 }
 ```
 
@@ -667,190 +555,86 @@ public class LevelRecord
 
 ### 4.7 菜单系统 (Menu)
 
-#### 4.7.1 MenuManager
+**文件路径：** `Assets/Game/Menu/`
 
-**职责：**
-- 主菜单核心逻辑
-- 新游戏/继续游戏/加载存档/退出游戏
-- 委托 SaveSlotPanel 处理栏位选择 UI
-
-**核心方法：**
-
-| 方法 | 功能 |
-|------|------|
-| `OnNewGameClicked()` | 打开栏位面板（NewGame 模式） |
-| `OnContinueClicked()` | 自动加载最新存档进入游戏 |
-| `OnLoadClicked()` | 打开栏位面板（Load 模式） |
-| `OnSlotConfirmed(int)` | 栏位确认回调，开始新游戏或加载存档 |
-
-**数据流：**
-```
-新游戏: 选择栏位 → 删旧档 → CreateNewGame → SaveGame → LoadScene("Level_1")
-继续游戏: GetLatestSaveSlot → LoadSave → LoadScene(save.currentLevelScene)
-加载存档: 选择栏位 → LoadSave → LoadScene
-```
-
-#### 4.7.2 SaveSlotPanel
-
-**职责：**
-- 独立的存档栏位选择 UI 组件
-- 支持 NewGame（选空栏位/覆盖已有）和 Load（选已有存档）两种模式
-- 从按钮子节点自动获取 Text 显示存档信息
-- 内置覆盖确认弹窗
-
-**核心方法：**
-
-| 方法 | 功能 |
-|------|------|
-| `Show(Mode)` | 显示面板并刷新栏位信息 |
-| `Hide()` | 隐藏面板及子面板 |
-| `OnSlotConfirmed(int)` | 事件，用户确认选择后触发 |
-| `OnCancelled` | 事件，用户取消时触发 |
-
-#### 4.7.3 MenuSettingsManager
-
-**职责：**
-- 菜单场景设置面板管理
-- 音量/全屏调整，PlayerPrefs 持久化
-
-#### 4.7.4 GameSettingsManager
-
-**职责：**
-- 关卡内设置面板管理
-- 打开设置时自动暂停游戏（保存/恢复 timeScale）
-- 返回主菜单功能
-
-#### 4.7.5 GamePauseManager
-
-**职责：**
-- 关卡内暂停/继续/重开/返回主菜单
+- **MenuManager**：主菜单核心逻辑。新游戏流程为：选择栏位 → 删旧档 → `CreateNewGame` → `SaveGame` → **加载 `StoryScene_Ch1`（第一章剧情）** → 剧情播完进 `Level_1`。继续游戏 / 加载存档直接读档进对应关卡。
+- **SaveSlotPanel**：存档栏位选择 UI（NewGame / Load 两种模式、覆盖确认弹窗）。
+- **MenuSettingsManager**：菜单设置（音量/全屏，PlayerPrefs 持久化）。
+- **GameSettingsManager / GamePauseManager**：关卡内设置与暂停（打开设置时暂停游戏）。
 
 ---
 
-### 4.8 对话系统 (Dialogue)
+### 4.8 剧情与对话 (Fungus)
 
-#### 4.8.1 DialogueManager
+> 旧的 `Assets/Dialogue/` 手写对话系统已废弃，移入 `Assets/Deprecated/Dialogue/`。剧情一律使用 **Fungus 4.3.4**。
 
-**职责：**
-- 对话流程控制
-- 文字打字机效果
-- 对话UI显示
+**场景：**
+- `Assets/Game/Story/StoryScene_Ch1.unity` — 第一章剧情（3 个 Block，结尾 LoadScene → `Level_1`）
+- `Assets/Game/Story/StoryScene_Ch2.unity` — 第二章剧情（5 个 Block，结尾 LoadScene → `Level_2`）
 
-**核心方法：**
+**剧本导入工具：** `Assets/Editor/ScriptToFungusTool.cs`（菜单 `Tools → Fungus → 导入剧本文本…`）
+- 规范格式：`## 幕标题`→Block、`@说话人`→Character、`【】`→Comment
+- 自动匹配 `Assets/ArtResources/Portraits/Portrait_{角色名}.png` 立绘
+- 幕间自动 Call 串联
 
-| 方法 | 功能 |
-|------|------|
-| `StartDialogue(DialogueAsset dialogue)` | 开始对话 |
-| `OnContinueClick()` | 继续/跳过打字 |
-| `ShowNextLine()` | 显示下一句 |
-| `TypeLine(string text)` | 打字机协程 |
+**剧情接入：**
+- 新游戏：`MenuManager.StartNewGame()` → `StoryScene_Ch1`
+- 通关：`BattleManager.LevelToStoryMap`（`Level_1 → StoryScene_Ch2`）
+
+---
+
+### 4.9 Buff 系统 (Buff)
+
+**文件路径：** `Assets/Game/Level/CommonLevel/Buff/`
+
+- **BuffData**（ScriptableObject）：Buff 定义，含 `BuffStatType`（Attack/MaxHp/MoveSpeed/AttackSpeed/PhysicalDefense/MagicDefense）与 `BuffTargetCamp`（PlayerOnly/EnemyOnly/All）。
+- **BuffManager**（战斗级单例，挂 BattleManager 同物体）：注册/应用 Buff，写入 `UnitAttr` 的 multiplier 修饰层。
+- 关卡配置：`LevelSetup` 拖入 BuffData 资产，游戏开始时自动注册。
 
 ---
 
 ## 5. 枚举定义
 
-### 5.1 CampType
-
-```csharp
-public enum CampType
-{
-    Player,  // 玩家阵营
-    Enemy    // 敌方阵营
-}
-```
-
-### 5.2 PathID
-
-```csharp
-public enum PathID
-{
-    Path_01,
-    Path_02,
-    Path_03
-    // 可扩展
-}
-```
-
-### 5.3 AttackType
-
-```csharp
-public enum AttackType
-{
-    Physical,  // 物理攻击（结算 physicalDefense）
-    Magic      // 法术攻击（结算 magicDefense）
-}
-```
-
-### 5.4 UnitType
-
-```csharp
-public enum UnitType
-{
-    Ground, // 地面单位，沿 Ground 路径移动
-    Flying  // 飞行单位，沿 Flight 路径移动，近战无法攻击
-}
-```
-
-### 5.5 AttackRangeType
-
-```csharp
-public enum AttackRangeType
-{
-    Melee,  // 近战，不能攻击飞行单位
-    Ranged  // 远程，可攻击所有单位
-}
-```
-
-### 5.6 PathMoveType
-
-```csharp
-public enum PathMoveType
-{
-    Ground,  // 地面路径（默认），仅地面单位可部署
-    Flight   // 飞行路径，仅飞行单位可部署
-}
-```
-
-### 5.7 UnitState
-
-```csharp
-public enum UnitState
-{
-    Moving,         // 沿路径移动
-    Fighting,       // 与敌方单位交战
-    Garrisoned,     // 驻扎在资源点/驻扎点
-    AttackingTower, // 攻击敌方防御塔
-    Dead            // 已死亡
-}
-```
-
-### 5.8 WaveTriggerType
-
-```csharp
-public enum WaveTriggerType
-{
-    AfterPrevious,  // 上波结束后延迟触发
-    Concurrent,     // 与上波并发
-    Manual,         // 等待外部调用 Continue()
-    AllUnitsDead    // 场上无存活敌人后触发
-}
-```
+| 枚举 | 文件路径 | 成员 |
+|------|----------|------|
+| `CampType` | Game/Level/CommonLevel/Camp/CampType.cs | Player, Enemy |
+| `ConnectionType` | Game/Level/CommonLevel/Path/ConnectionType.cs | Walk, Teleport |
+| `PathID` | Game/Level/CommonLevel/Path/PathID.cs | Path_01 ~ Path_05 |
+| `WaveTriggerType` | Game/Level/CommonLevel/Wave/WaveTriggerType.cs | AfterPrevious, Concurrent, Manual, AllUnitsDead |
+| `BuffStatType` | Game/Level/CommonLevel/Buff/BuffData.cs | Attack, MaxHp, MoveSpeed, AttackSpeed, PhysicalDefense, MagicDefense |
+| `BuffTargetCamp` | Game/Level/CommonLevel/Buff/BuffData.cs | PlayerOnly, EnemyOnly, All |
+| `MoveType` | Game/Unit/Scripts/Movement/MoveType.cs | Ground, Flying（预留 Water）|
+| `AttackType` | Game/Unit/Scripts/Core/UnitAttr.cs | Physical, Magic |
+| `AttackRangeType` | Game/Unit/Scripts/Core/UnitAttr.cs | Melee, Ranged |
+| `UnitState` | Game/Unit/Scripts/Core/UnitState.cs | Moving, Advancing, Fighting, Garrisoned, AttackingTower, Dead |
+| `PathVisualManager.EffectType` | Game/Level/CommonLevel/Path/PathVisualManager.cs | None, ColorChange, WidthPulse, ColorAndPulse |
+| `BaseCombatStrategy.AttackPhase` | Game/Unit/Scripts/Combat/BaseCombatStrategy.cs | Idle, Windup, Recovery, IdleWait（嵌套私有）|
+| `SaveSlotPanel.Mode` | Game/Menu/SaveSlotPanel.cs | NewGame, Load（嵌套）|
 
 ---
 
 ## 6. 工具类
 
-### 6.1 Math2DHelper
+### 6.1 数学工具（Game/Level/CommonLevel/Helper/）
 
-**职责：** 2D数学计算辅助
-
-**核心方法：**
-
-| 方法 | 功能 |
+| 类 | 职责 |
 |------|------|
-| `SqDistPointToSegment()` | 点到线段最短距离平方 |
-| `MinDistancePointToPolyline()` | 点到折线最短距离 |
-| `ClosestPointOnPolyline()` | 点到折线最近点坐标 + 段索引 + 插值 t |
+| `Math2DHelper` | 2D 几何：点-线段/点-折线最近距离 |
+| `PathMath` | 直线路径数学（直线/闭环采样与切线）|
+| `CatmullRomMath` | Centripetal Catmull-Rom 曲线数学（弧长表 / Gauss 求积）|
+| `RangeCircleDisplay` | 运行时实心填充范围圈 |
+| `LeashCircleDisplay` | 运行时空心圆范围圈（牵制范围可视化）|
+
+### 6.2 DamageCalculator（Game/Level/CommonLevel/Battle/）
+
+静态伤害结算：`max(1, 伤害 - 对应防御)`。
+
+### 6.3 编辑器工具（Assets/Editor/ 与模块内 Editor/）
+
+- `ScriptToFungusTool.cs` — 剧本 txt → Fungus Flowchart 导入工具
+- `Game/Unit/Editor/CardDataGenerator.cs` — 一键生成所有兵种卡牌数据
+- `Game/Level/CommonLevel/Path/PathManager.Editor.cs` — 路径 Gizmo + 右键复制/传送可视化
+- `Game/Level/CommonLevel/Path/Editor/PathVisualMigration.cs` — 路径视觉子物体迁移工具
 
 ---
 
@@ -859,7 +643,7 @@ public enum WaveTriggerType
 ### 7.1 菜单到关卡流程
 
 1. **主菜单**
-   - 新游戏 → 选择存档栏位 → 进入 Level_1
+   - 新游戏 → 选择存档栏位 → **播第一章剧情（StoryScene_Ch1）** → 进入 Level_1
    - 继续游戏 → 自动加载最新存档 → 进入对应关卡
    - 加载存档 → 选择已有存档栏位 → 进入对应关卡
 
@@ -868,7 +652,7 @@ public enum WaveTriggerType
    - 设置面板：音量/全屏/返回主菜单（打开时自动暂停）
 
 3. **胜利**
-   - 自动存档 + 标记关卡完成 → 显示胜利面板 → 下一关/返回主菜单
+   - 自动存档 + 标记关卡完成 → 若该关在 `LevelToStoryMap` 中（当前 `Level_1`）先播第二章剧情 → 显示胜利面板 → 下一关/主菜单
 
 4. **失败**
    - 显示失败面板 → 重试/返回主菜单
@@ -876,55 +660,36 @@ public enum WaveTriggerType
 ### 7.2 完整战斗流程
 
 1. **初始化阶段**
-   - BattleManager 初始化单例
-   - LevelPathManager 收集场景路径
-   - CardManager 生成玩家卡组卡牌UI
-
-2. **战斗开始**
-   - BattleManager 启动 WaveGenerator
-   - 费用开始自动增长
-
-3. **波次循环**
-   - WaveGenerator 按配置生成敌人
-   - 敌人沿指定路径向目标塔移动
-
-4. **玩家操作**
-   - 玩家选择卡牌
-   - 进入部署模式，显示同阵营路线
-   - 选择路线并部署单位
-   - 单位沿路径前进并战斗
-
-5. **胜负判定**
-   - 双塔互相攻击
-   - 一方塔死亡触发胜负判定
-   - 暂停游戏，显示结果面板
+   - `LevelSetup`（最早执行）统一下发各配置 → `BattleManager` / `BuffManager` 初始化
+   - `LevelPathManager` 收集场景路径
+   - `CardManager` 生成玩家卡组卡牌 UI
+2. **战斗开始**：`BattleManager` 启动 `WaveGenerator`，费用自动增长
+3. **波次循环**：按配置生成敌人，沿指定路径（含传送段）向目标塔移动
+4. **玩家操作**：选卡 → 部署 → 单位沿路径前进并战斗、驻扎、推进
+5. **胜负判定**：双塔互攻；普通模式塔亡判胜，Boss 模式 BossUnit 死亡判胜；牵制机制下超出范围的己方单位死亡并返还费用
 
 ---
 
 ## 8. 项目配置
 
-### 8.1 Unity包依赖
+### 8.1 Unity 包依赖
 
-根据 [Packages/manifest.json](file:///d:/project/My%20project/Packages/manifest.json)，主要依赖：
-
-- `com.unity.feature.2d` - 2D功能包
+根据 [Packages/manifest.json](file:///d:/project/My%20project/Packages/manifest.json)：
+- `com.unity.feature.2d` - 2D 功能包
 - `com.unity.textmeshpro` - 文本渲染
-- `com.unity.ugui` - UI系统
-- `com.unity.modules.physics2d` - 2D物理
+- `com.unity.ugui` - UI 系统
+- `com.unity.modules.physics2d` - 2D 物理
 
 ### 8.2 标签与层
 
-项目使用以下标签/层：
+- `BattleCanvas` - 战斗 UI 画布标签
+- `EnemyUnit` / `PlayerUnit` - 单位层
 
-- `BattleCanvas` - 战斗UI画布标签
-- `EnemyUnit` - 敌方单位层
-- `PlayerUnit` - 玩家单位层
+### 8.3 构建场景列表（Build Settings）
 
-### 8.3 构建场景列表
+实际构建序：`MenuScene → StoryScene_Ch1 → Level_1 → StoryScene_Ch2 → Level_2`
 
-- `MenuScene.unity` — 主菜单
-- `Level_1.unity` — 关卡 1
-- `TestLevelScene.unity` — 测试关卡
+> ⚠️ `Level_3~6`、`Test`、`GameStart` 未加入 Build Settings。`EditorBuildSettings.asset` 中的路径仍为旧路径（GUID 与新位置一致，Unity 打开会自动修正）。
 
 ---
 
@@ -932,43 +697,49 @@ public enum WaveTriggerType
 
 ### 9.1 新增卡牌
 
-1. 创建 CardData 资产（右键 → Battle → Card Data）
+1. 创建 CardData 资产（右键 → Battle → Card Data），或用 `CardDataGenerator` 一键生成
 2. 配置卡牌属性（费用、冷却、图标、单位预制体）
-3. 将卡牌添加到 PlayerDeck 配置
+3. 将卡牌添加到 `LevelSetup.availableCards` 或 PlayerDeck 配置
 
 ### 9.2 新增路径
 
 1. 在场景创建空物体，添加 PathManager 组件
-2. 配置阵营和路径ID
-3. 添加路径点子物体
-4. LevelPathManager 会自动收集
+2. 配置阵营、路径ID、路径点、曲线/循环
+3. 如需传送：配置 `connectionTypes`（对应段设为 Teleport）+ `teleportTime`
+4. `LevelPathManager` 自动收集
 
 ### 9.3 新增波次
 
 1. 创建 WaveList 配置资产
-2. 添加 WaveData 条目
-3. 配置每个波次的阵营、路径、单位、数量、间隔
-4. 将 WaveList 绑定到 BattleManager
+2. 添加 WaveData 条目（阵营、路径、单位、数量、间隔、触发类型）
+3. 将 WaveList 绑定到 `LevelSetup.waveList` 或 BattleManager
 
 ### 9.4 新增单位
 
-1. 创建单位预制体
-2. 挂载组件：`UnitAttr` + `UnitUI` + `UnitBrain` + 一个 MoveStrategy + 一个 CombatStrategy
-3. 配置 `UnitAttr` 的各项数值（HP、攻击、速度、范围、阵营、类型等）
-4. 远程单位在 `RangedCombatStrategy` 中配置 `bulletPrefab`、`bulletSpeed`
-5. 治疗单位在 `HealerCombatStrategy` 中配置 `healRange`、`healAmount`、`healCooldown`
-6. 关联到卡牌 `CardData.unitPrefab` 或波次 `WaveData.unitPrefab`
-
-> 旧预制体可通过 `Tools → 迁移兵种预制体到新体系` 一键升级。
+1. 创建单位预制体，挂载：`UnitAttr` + `UnitUI` + `UnitBrain` + 一个 MoveStrategy + 一个 CombatStrategy
+2. 配置 `UnitAttr` 数值（HP、攻击、速度、范围、阵营、`moveType`、`attackType` 等）
+3. 远程单位配置 `RangedCombatStrategy.bulletPrefab/bulletSpeed`；治疗单位配置 `HealerCombatStrategy` 各参数
+4. 关联到卡牌 `CardData.unitPrefab` 或波次 `WaveData.unitPrefab`；初始布阵挂 `InitialUnitPlacer`
 
 ### 9.5 新增关卡
 
-1. 将关卡场景添加到 Build Settings
-2. 在 `SaveManager.levelSceneOrder` 数组中按顺序追加关卡场景名
+1. 创建关卡场景，挂 `LevelSetup` 统一下发配置（费用/波次/双塔/卡组/资源点/驻扎点/Buff/牵制/Boss）
+2. 添加到 Build Settings（场景序中）
+3. 在 `SaveManager.levelSceneOrder` 数组追加场景名
+4. 若通关需要插剧情：在 `BattleManager.LevelToStoryMap` 登记 `{关卡场景 → 剧情场景}`
 
-### 9.6 存档栏位数调整
+### 9.6 新增剧情
 
-修改 `SaveManager.SlotCount` 常量，SaveSlotPanel 会自动适配。
+1. 编写规范格式剧本（`## 幕标题` / `@说话人` / `【】`注释）
+2. 用 `Tools → Fungus → 导入剧本文本…`（ScriptToFungusTool）生成 Flowchart 场景
+3. 确保结尾 Fungus `LoadScene` 指向目标关卡
+4. 在 `LevelToStoryMap` 登记接入点
+
+### 9.7 Buff / 牵制 / Boss 配置
+
+- **Buff**：创建 `BuffData` 资产 → 拖入 `LevelSetup` 的 Buff 配置分组。
+- **牵制**：`LevelSetup` 开启 `overrideLeashConfig` → 设 `enableLeashZone / leashRange / leashCostRefundRatio`。
+- **Boss 胜利**：`LevelSetup.useBossVictory=true`，并将含 `BossUnit` 组件的单位预制体加入波次配置。
 
 ---
 
@@ -976,67 +747,52 @@ public enum WaveTriggerType
 
 | 文件 | 说明 |
 |------|------|
-| [BattleManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Battle/BattleManager.cs) | 战斗核心管理器 |
-| [TowerBase.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Battle/TowerBase.cs) | 防御塔基础脚本 |
-| [CardManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardManager.cs) | 卡牌管理器 |
-| [CardData.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardData.cs) | 卡牌数据 |
-| [CardDeploy.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Card/CardDeploy.cs) | 卡牌部署系统 |
-| [PathManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/PathManager.cs) | 单条路径管理（含曲线系统） |
-| [LevelPathManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/LevelPathManager.cs) | 场景路径中心 |
-| [PathVisualManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/PathVisualManager.cs) | 路径视觉效果管理 |
-| [GarrisonPoint.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/GarrisonPoint/GarrisonPoint.cs) | 驻扎点组件 |
-| [GarrisonPointManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/GarrisonPoint/GarrisonPointManager.cs) | 驻扎点管理器（场景级单例） |
-| [GarrisonPointPlacer.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/GarrisonPoint/GarrisonPointPlacer.cs) | 驻扎点放置交互 |
-| [WaveGenerator.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Wave/WaveGenerator.cs) | 波次生成器 |
-| [UnitBrain.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/UnitBrain.cs) | 单位状态机调度器 |
-| [UnitAttr.cs](file:///d:/project/My%20project/Assets/Unit/GenericScript/UnitAttr.cs) | 单位属性数据 |
-| [GroundMoveStrategy.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Movement/GroundMoveStrategy.cs) | 地面沿路径移动 |
-| [FlightMoveStrategy.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Movement/FlightMoveStrategy.cs) | 飞行沿路径移动 |
-| [MeleeCombatStrategy.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Combat/MeleeCombatStrategy.cs) | 近战战斗策略 |
-| [RangedCombatStrategy.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Combat/RangedCombatStrategy.cs) | 远程射击策略 |
-| [HealerCombatStrategy.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Combat/HealerCombatStrategy.cs) | 治疗策略 |
-| [Bullet.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/Bullet.cs) | 投射物 |
-| [PathMoveType.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Path/PathMoveType.cs) | 路径移动类型与兼容性校验 |
-| [UnitState.cs](file:///d:/project/My%20project/Assets/Unit/NewScript/UnitState.cs) | 单位状态枚举 |
-| [Math2DHelper.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/Helper/Math2DHelper.cs) | 2D数学工具 |
-| [DialogueManager.cs](file:///d:/project/My%20project/Assets/Dialogue/DialogueManager.cs) | 对话管理器 |
-| [SaveManager.cs](file:///d:/project/My%20project/Assets/Save/SaveManager.cs) | 存档管理器（静态） |
-| [GameSaveData.cs](file:///d:/project/My%20project/Assets/Save/GameSaveData.cs) | 存档数据结构 |
-| [MenuManager.cs](file:///d:/project/My%20project/Assets/Menu/MenuManager.cs) | 主菜单管理器 |
-| [MenuSettingsManager.cs](file:///d:/project/My%20project/Assets/Menu/MenuSettingsManager.cs) | 菜单设置管理器 |
-| [SaveSlotPanel.cs](file:///d:/project/My%20project/Assets/Menu/SaveSlotPanel.cs) | 存档栏位选择面板 |
-| [GameSettingsManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/UI/GameSettingsManager.cs) | 关卡内设置管理器 |
-| [GamePauseManager.cs](file:///d:/project/My%20project/Assets/Level/CommonLevel/UI/GamePauseManager.cs) | 暂停/重开/返回菜单 |
+| [BattleManager.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Battle/BattleManager.cs) | 战斗核心管理器（费用/胜负/剧情映射）|
+| [TowerBase.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Battle/TowerBase.cs) | 防御塔基础脚本 |
+| [BossUnit.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Battle/BossUnit.cs) | Boss 标记（死亡判胜）|
+| [TowerLeashZone.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Battle/TowerLeashZone.cs) | Boss 关牵制范围（单例）|
+| [DamageCalculator.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Battle/DamageCalculator.cs) | 伤害结算静态工具 |
+| [BuffManager.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Buff/BuffManager.cs) | Buff 管理器（战斗级单例）|
+| [BuffData.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Buff/BuffData.cs) | Buff 数据（SO）+ 枚举 |
+| [LevelSetup.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/LevelSetup/LevelSetup.cs) | 关卡统一配置入口 |
+| [CardManager.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Card/CardManager.cs) | 卡牌管理器 |
+| [CardData.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Card/CardData.cs) | 卡牌数据 |
+| [CardDeploy.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Card/CardDeploy.cs) | 卡牌部署系统 |
+| [PathManager.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Path/PathManager.cs) | 单条路径管理（曲线/传送段）|
+| [PathManager.Editor.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Path/PathManager.Editor.cs) | 路径编辑器扩展 |
+| [LevelPathManager.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Path/LevelPathManager.cs) | 场景路径中心（单例）|
+| [ConnectionType.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Path/ConnectionType.cs) | 路径段连接类型枚举 |
+| [WaveGenerator.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/Wave/WaveGenerator.cs) | 波次生成器 |
+| [Garrison.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/GarrisonPoint/Garrison.cs) | 驻扎核心组件 |
+| [GarrisonPointManager.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/GarrisonPoint/GarrisonPointManager.cs) | 驻扎点管理器（单例）|
+| [ResourcePointManager.cs](file:///d:/project/My%20project/Assets/Game/Level/CommonLevel/ResourcePoint/ResourcePointManager.cs) | 资源点管理器（单例）|
+| [UnitBrain.cs](file:///d:/project/My%20project/Assets/Game/Unit/Scripts/Core/UnitBrain.cs) | 单位状态机调度器 |
+| [UnitAttr.cs](file:///d:/project/My%20project/Assets/Game/Unit/Scripts/Core/UnitAttr.cs) | 单位属性数据 + Buff 修饰层 |
+| [UnitState.cs](file:///d:/project/My%20project/Assets/Game/Unit/Scripts/Core/UnitState.cs) | 单位状态枚举 |
+| [BaseMoveStrategy.cs](file:///d:/project/My%20project/Assets/Game/Unit/Scripts/Movement/BaseMoveStrategy.cs) | 移动抽象基类（传送状态机）|
+| [MoveType.cs](file:///d:/project/My%20project/Assets/Game/Unit/Scripts/Movement/MoveType.cs) | MoveType 枚举 + 兼容性判断 |
+| [BaseCombatStrategy.cs](file:///d:/project/My%20project/Assets/Game/Unit/Scripts/Combat/BaseCombatStrategy.cs) | 战斗抽象基类 |
+| [Bullet.cs](file:///d:/project/My%20project/Assets/Game/Unit/Scripts/Combat/Bullet.cs) | 投射物 |
+| [UnitUI.cs](file:///d:/project/My%20project/Assets/Game/Unit/Scripts/UI/UnitUI.cs) | 血条 UI |
+| [ScriptToFungusTool.cs](file:///d:/project/My%20project/Assets/Editor/ScriptToFungusTool.cs) | 剧本 → Fungus 导入工具 |
+| [CardDataGenerator.cs](file:///d:/project/My%20project/Assets/Game/Unit/Editor/CardDataGenerator.cs) | 一键生成卡牌数据 |
+| [SaveManager.cs](file:///d:/project/My%20project/Assets/Game/Save/SaveManager.cs) | 存档管理器（静态）|
+| [MenuManager.cs](file:///d:/project/My%20project/Assets/Game/Menu/MenuManager.cs) | 主菜单管理器 |
+| [SaveSlotPanel.cs](file:///d:/project/My%20project/Assets/Game/Menu/SaveSlotPanel.cs) | 存档栏位选择面板 |
 
 ---
 
 ## 11. 扩展建议
 
-1. **卡牌系统扩展**
-   - 添加特殊效果卡牌（AOE、治疗、Buff等）
-   - 支持卡牌升级与组合
-   - 实现卡牌抽卡机制
-
-2. **单位系统扩展**
-   - 添加更多策略组件（如 AoECombatStrategy、BuffCombatStrategy）
-   - 实现单位技能系统
-   - 添加单位升级与进化
-
-3. **路径系统扩展**
-   - 添加路径事件（陷阱、buff点）
-   - 支持路径分支与选择
-   - ~~曲线路径~~（✅ 已实现 Centripetal CR 曲线）
-
-4. **存档系统扩展**
-   - 支持存档导入/导出
-   - 添加自动存档（波次中途）
-   - 支持云存档
-
-5. **UI/UX优化**
-   - 关卡选择地图界面
-   - 战斗统计面板
-   - 优化卡牌拖动与部署手感
+1. **卡牌系统扩展**：特殊效果卡牌（AOE、治疗、Buff）、卡牌升级与组合、抽卡机制。
+2. **单位系统扩展**：更多策略组件（AoECombatStrategy、BuffCombatStrategy）、技能系统、单位升级进化。
+3. **路径系统扩展**：路径事件（陷阱、buff 点）、路径分支与选择。~~曲线路径~~（✅ 已实现 CR 曲线）、传送段（✅ 已实现）。
+4. **存档系统扩展**：存档导入/导出、自动存档、云存档；扩展 `levelSceneOrder` 以支持更多关卡。
+5. **UI/UX 优化**：关卡选择地图、战斗统计面板、部署手感优化。
+6. **Boss 关补全**：将 `SpecialUnit/Boss.prefab` 接入波次配置，完成 Boss 出场接线（当前仅开关已配、出场未接）。
+7. **FloatNumber 接入**：在攻击/治疗结算处 Instantiate 伤害飘字（当前为死代码）。
+8. **音效系统**：AudioManager 统一管理 BGM/SFX（当前缺失）。
 
 ---
 
-*文档更新时间：2026-07-13*
+*文档更新时间：2026-08-07（同步到最新目录结构与新增功能）*
