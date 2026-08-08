@@ -13,12 +13,12 @@ GameObject:
   - component: {fileID: 6272703457052068143}
   - component: {fileID: 7710187593837134469}
   - component: {fileID: -7181395724997178257}
-  - component: {fileID: 2408473306296529204}
-  - component: {fileID: 7729501201216627675}
-  - component: {fileID: 593444838318284749}
-  - component: {fileID: -1160720065033031974}
+  - component: {fileID: 2428969755019774135}
+  - component: {fileID: 2210933488940755037}
+  - component: {fileID: 4905399793398548890}
+  - component: {fileID: 8914349376392410232}
   m_Layer: 10
-  m_Name: Mechs
+  m_Name: Healer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -78,10 +78,10 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 1187708677
-  m_SortingLayer: 5
+  m_SortingLayer: 4
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.8443396, g: 0.7915443, b: 0.087620154, a: 1}
+  m_Color: {r: 0, g: 1, b: 0.87995815, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -151,30 +151,19 @@ MonoBehaviour:
   camp: 0
   moveType: 0
   attackRangeType: 0
-  maxHp: 350
-  physicalDefense: 30
-  magicDefense: 0
-  atk: 60
-  attackType: 0
-  atkRange: 1
-  atkCD: 1.4
+  maxHp: 300
+  physicalDefense: 0
+  magicDefense: 50
+  atk: 0
+  attackType: 1
+  atkRange: 9
+  atkCD: 1.5
   moveSpeed: 1
-  detectRange: 1
+  detectRange: 9
   hpBarPrefab: {fileID: 3632831731741846920, guid: f2d158cf31cb8dc4b9177e60fa4a75cb, type: 3}
-  atkMultiplier: 1
-  maxHpMultiplier: 1
-  moveSpeedMultiplier: 1
-  atkSpeedMultiplier: 1
-  physicalDefenseMultiplier: 1
-  magicDefenseMultiplier: 1
-  _currentAtk: 0
-  _currentMaxHp: 0
-  _currentMoveSpeed: 0
-  _currentAtkCD: 0
   currentHp: 0
   isGarrisoned: 0
   garrisonedAt: {fileID: 0}
-  deployCost: 0
 --- !u!114 &-7181395724997178257
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -187,7 +176,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22821be36a350384ab68be8c6d37b64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &2408473306296529204
+--- !u!114 &2428969755019774135
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -200,7 +189,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _state: 0
---- !u!114 &7729501201216627675
+--- !u!114 &2210933488940755037
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -212,7 +201,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f1f0e64c4a40dd4e8233df7bc485f4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &593444838318284749
+--- !u!114 &4905399793398548890
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -221,7 +210,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 6656251850606900385}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cece72025651ffe46adf75029a806a26, type: 3}
+  m_Script: {fileID: 11500000, guid: 43080a2d1c1987f409e0af5b8f7c23af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   baseWindup: 0.15
@@ -229,7 +218,12 @@ MonoBehaviour:
   detectInterval: 0.2
   attackSpeedMul: 1
   effectiveIntervalDebug: 0
---- !u!114 &-1160720065033031974
+  healAmount: 25
+  healRange: 10
+  healEffectPrefab: {fileID: 3970926108866269873, guid: cfb2d38b987dbb34787088c6939983ea, type: 3}
+  effectHeightOffset: 2
+  canHealSelf: 1
+--- !u!114 &8914349376392410232
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
