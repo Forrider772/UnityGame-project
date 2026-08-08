@@ -15,38 +15,17 @@ MonoBehaviour:
   waveListName: 
   camp: 1
   waves:
-  - unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
+  - unitPrefab: {fileID: 6656251850606900385, guid: 7d60d6ee712e20841b304ab7ed2f96d6, type: 3}
     spawnPoint: {fileID: 0}
     pathID: 0
-    spawnCount: 4
-    spawnInterval: 1
+    spawnCount: 30
+    spawnInterval: 5
     triggerType: 0
     delayBeforeStart: 2
-  - unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
+  - unitPrefab: {fileID: 6656251850606900385, guid: f1686d4f0e1e0f24e965511cb89da78a, type: 3}
     spawnPoint: {fileID: 0}
     pathID: 1
-    spawnCount: 3
-    spawnInterval: 2
+    spawnCount: 30
+    spawnInterval: 4
     triggerType: 1
-    delayBeforeStart: 2
-  - unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
-    spawnPoint: {fileID: 0}
-    pathID: 0
-    spawnCount: 3
-    spawnInterval: 2
-    triggerType: 0
-    delayBeforeStart: 2
-  - unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
-    spawnPoint: {fileID: 0}
-    pathID: 0
-    spawnCount: 3
-    spawnInterval: 2
-    triggerType: 0
-    delayBeforeStart: 2
-  - unitPrefab: {fileID: 6656251850606900385, guid: 55f83e005d9dd454cbf1e1aac876db9b, type: 3}
-    spawnPoint: {fileID: 0}
-    pathID: 0
-    spawnCount: 3
-    spawnInterval: 2
-    triggerType: 0
     delayBeforeStart: 2
