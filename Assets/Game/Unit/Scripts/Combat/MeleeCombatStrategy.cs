@@ -7,7 +7,7 @@ using UnityEngine;
 public class MeleeCombatStrategy : BaseCombatStrategy
 {
     // 近战无额外 Inspector 配置项，所有参数由 BaseCombatStrategy 和 UnitAttr 提供
-    // 索敌时自动跳过飞行单位（attackRangeType == Melee && moveType == Flying）
+    // 索敌时仅地面近战跳过飞行单位；飞行近战可攻击任意目标（含飞行）
 
     protected override Transform PerformDetection(UnitAttr attr, Vector2 position)
     {
@@ -26,8 +26,10 @@ public class MeleeCombatStrategy : BaseCombatStrategy
             UnitAttr ta = hit.GetComponent<UnitAttr>();
             if (ta == null || ta.currentHp <= 0) continue;
 
-            // 近战不能攻击飞行单位
-            if (attr.attackRangeType == AttackRangeType.Melee && ta.moveType == MoveType.Flying)
+            // 地面近战不能攻击飞行单位；飞行近战可攻击飞行单位
+            if (attr.attackRangeType == AttackRangeType.Melee
+                && attr.moveType != MoveType.Flying
+                && ta.moveType == MoveType.Flying)
                 continue;
 
             float dist = Vector2.Distance(position, hit.transform.position);
