@@ -86,6 +86,7 @@ public class CardInteraction : MonoBehaviour
             if (SelectMask != null)
                 SelectMask.gameObject.SetActive(true);
             CardManager.Instance.OnCardSelected(this);
+            GameEvents.OnCardSelected?.Invoke();
         }
         else
         {
@@ -104,6 +105,7 @@ public class CardInteraction : MonoBehaviour
         currentCd = cardData.cooldown;
         toggle.isOn = false;            // 取消选中 → 触发 OnToggleChanged → 隐藏遮罩
         toggle.interactable = false;    // 冷却期间禁止点击
+        GameEvents.OnCardDeployed?.Invoke();
     }
 
     /// <summary>

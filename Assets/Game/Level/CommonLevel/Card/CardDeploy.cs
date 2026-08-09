@@ -198,6 +198,7 @@ public class CardDeploy : MonoBehaviour
 
         // 注入阵营和layer（预制体可跨阵营复用）
         UnitHelper.Configure(unit, selectedCard.camp);
+        GameEvents.OnUnitSummoned?.Invoke();
 
         // 应用关卡 buff
         BuffManager.Instance.ApplyBuffs(unit.GetComponent<UnitAttr>(), selectedCard.camp);

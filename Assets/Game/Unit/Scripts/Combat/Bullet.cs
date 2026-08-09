@@ -47,6 +47,8 @@ public class Bullet : MonoBehaviour
 
     void HitTarget()
     {
+        GameEvents.OnBulletHit?.Invoke();
+
         if (target.TryGetComponent<UnitBrain>(out var unitBrain))
         {
             unitBrain.TakeDamage(damage, attackType);

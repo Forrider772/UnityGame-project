@@ -99,6 +99,9 @@ public class HealerCombatStrategy : BaseCombatStrategy
                 target.position + Vector3.up * effectHeightOffset,
                 Quaternion.identity);
         }
+
+        // 发出治疗生效事件（供音效/特效订阅）
+        GetComponent<UnitBrain>()?.NotifyHeal();
     }
 
     /// <summary>治疗师不攻击塔</summary>

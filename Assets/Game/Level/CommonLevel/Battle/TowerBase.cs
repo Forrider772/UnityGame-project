@@ -93,6 +93,8 @@ public class TowerBase : MonoBehaviour
             if (curTarget.TryGetComponent(out UnitBrain unit))
                 unit.TakeDamage(atk, AttackType.Physical);
 
+            GameEvents.OnTowerAttack?.Invoke();
+
             // 重置计时器
             atkTimer = 0;
         }
@@ -104,6 +106,7 @@ public void TakeDamage(float dmg, AttackType type)
     float finalDmg = DamageCalculator.Calculate(dmg, type, physicalDefense, magicDefense);
     hp -= finalDmg;
     hpBar?.UpdateHp(hp);
+    GameEvents.OnTowerDamaged?.Invoke();
 }
 
 // 兼容旧调用，不报错
@@ -115,6 +118,8 @@ public void TakeDamage(float dmg)
     // 死亡逻辑：标记胜负状态、销毁血条、销毁自身、触发胜负判定
     void Die()
     {
+        GameEvents.OnTowerDestroyed?.Invoke();
+
         // 标记对应阵营的塔已死亡
         if(camp == CampType.Enemy)
         {

@@ -43,6 +43,8 @@ public class UnitBrain : MonoBehaviour
     public event Action<GameObject> OnDeath;                    // 死亡前触发
     public event Action<float, AttackType> OnDamageTaken;       // 受到伤害
     public event Action OnAttackHit;                            // 攻击命中
+    public event Action OnRangedFire;                           // 远程单位开火
+    public event Action OnHeal;                                 // 治疗生效
     public event Action OnMoveStart;                            // 开始移动
     public event Action OnPathComplete;                         // 路径走完
 
@@ -384,6 +386,18 @@ public class UnitBrain : MonoBehaviour
     public void NotifyAttackHit()
     {
         OnAttackHit?.Invoke();
+    }
+
+    /// <summary>由 RangedCombatStrategy 在发射投射物时调用</summary>
+    public void NotifyRangedFire()
+    {
+        OnRangedFire?.Invoke();
+    }
+
+    /// <summary>由 HealerCombatStrategy 在治疗生效时调用</summary>
+    public void NotifyHeal()
+    {
+        OnHeal?.Invoke();
     }
 
     /// <summary>

@@ -153,6 +153,7 @@ public class BattleManager : MonoBehaviour
     public void OnBossDefeated()
     {
         if (isGameOver) return;
+        GameEvents.OnBossDefeated?.Invoke();
         GameWin();
     }
 
@@ -161,6 +162,7 @@ public class BattleManager : MonoBehaviour
     /// </summary>
     void GameWin()
     {
+        GameEvents.OnGameWin?.Invoke();
         isGameOver = true;
         Time.timeScale = 0;
         SaveManager.MarkLevelCompleted(SceneManager.GetActiveScene().name, SaveManager.CurrentSlotIndex);
@@ -173,6 +175,7 @@ public class BattleManager : MonoBehaviour
     /// </summary>
     void GameLose()
     {
+        GameEvents.OnGameLose?.Invoke();
         isGameOver = true;
         Time.timeScale = 0;
         if (losePanel != null)

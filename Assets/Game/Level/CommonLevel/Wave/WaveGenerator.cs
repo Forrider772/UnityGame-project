@@ -153,10 +153,13 @@ public class WaveGenerator : MonoBehaviour
 
         var units = waveSpawnedUnits[waveIndex];
 
+        GameEvents.OnWaveStart?.Invoke();
+
         for (int i = 0; i < wave.spawnCount; i++)
         {
             // 在生成点位置生成单位
             GameObject unit = Instantiate(wave.unitPrefab, spawnAt.position, Quaternion.identity);
+            if (i == 0) GameEvents.OnEnemySpawned?.Invoke();
 
             // 注入阵营和layer（预制体可跨阵营复用）
             UnitHelper.Configure(unit, waveList.camp);

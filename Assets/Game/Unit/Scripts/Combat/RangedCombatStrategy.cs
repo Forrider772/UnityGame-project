@@ -69,5 +69,8 @@ public class RangedCombatStrategy : BaseCombatStrategy
             bulletScript.speed = bulletSpeed;
             bulletScript.attackType = attr.attackType;
         }
+
+        // 发出远程开火事件（供音效/特效订阅）
+        GetComponent<UnitBrain>()?.NotifyRangedFire();
     }
 }
