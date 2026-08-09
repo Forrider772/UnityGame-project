@@ -22,6 +22,9 @@ public class GamePauseManager : MonoBehaviour
         reStartButton.onClick.AddListener(GameReStart);
         pauseButton.onClick.AddListener(GamePause);
         resumeButton.onClick.AddListener(GameResume);
+        AudioManager.BindClick(reStartButton);
+        AudioManager.BindClick(pauseButton);
+        AudioManager.BindClick(resumeButton);
     }
 
     // ========== 按钮绑定的方法 ==========

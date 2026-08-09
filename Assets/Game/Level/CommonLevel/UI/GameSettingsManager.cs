@@ -11,7 +11,8 @@ public class GameSettingsManager : MonoBehaviour
 {
     [Header("UI引用")]
     public GameObject settingsPanel;   // 设置菜单面板
-    public Slider volumeSlider;        // 音量滑块
+    public Slider volumeSlider;        // BGM 音量滑块
+    public Slider sfxVolumeSlider;     // SFX 音效音量滑块
     public Toggle fullscreenToggle;    // 全屏开关
     public Button openSettingsBtn;     // 打开设置的按钮
     public Button closeSettingsBtn;    // 关闭设置的按钮
@@ -24,7 +25,8 @@ public class GameSettingsManager : MonoBehaviour
     private void Start()
     {
         // 初始化UI状态，与当前系统设置同步
-        volumeSlider.value = AudioListener.volume;
+        volumeSlider.value = AudioManager.Instance?.GetBGMVolume() ?? AudioManager.GetPersistedBGMVolume();
+        sfxVolumeSlider.value = AudioManager.Instance?.GetSFXVolume() ?? AudioManager.GetPersistedSFXVolume();
         fullscreenToggle.isOn = Screen.fullScreen;
 
         // 绑定按钮点击事件
@@ -32,9 +34,14 @@ public class GameSettingsManager : MonoBehaviour
         closeSettingsBtn.onClick.AddListener(CloseSettings);
         quitBtn.onClick.AddListener(QuitGame);
         returnToMenuBtn.onClick.AddListener(ReturnToMenu);
+        AudioManager.BindClick(openSettingsBtn);
+        AudioManager.BindClick(closeSettingsBtn);
+        AudioManager.BindClick(quitBtn);
+        AudioManager.BindClick(returnToMenuBtn);
 
         // 绑定滑块和开关值变化事件
         volumeSlider.onValueChanged.AddListener(SetVolume);
+        sfxVolumeSlider.onValueChanged.AddListener(SetSFXVolume);
         fullscreenToggle.onValueChanged.AddListener(SetFullscreen);
 
         // 初始隐藏设置面板
@@ -62,12 +69,23 @@ public class GameSettingsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 设置音量
+    /// 设置 BGM 音量
     /// </summary>
     /// <param name="volume">音量值（0~1）</param>
     public void SetVolume(float volume)
     {
-        AudioListener.volume = volume;
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.SetBGMVolume(volume);
+    }
+
+    /// <summary>
+    /// 设置 SFX 音效音量
+    /// </summary>
+    /// <param name="volume">音量值（0~1）</param>
+    public void SetSFXVolume(float volume)
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.SetSFXVolume(volume);
     }
 
     /// <summary>

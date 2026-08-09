@@ -15,27 +15,30 @@ public class MenuSettingsManager : MonoBehaviour
     public Button closeSettingsBtn;       // 关闭设置按钮
 
     [Header("设置控件")]
-    public Slider volumeSlider;           // 音量滑块
+    public Slider volumeSlider;           // BGM 音量滑块
+    public Slider sfxVolumeSlider;        // SFX 音效音量滑块
     public Toggle fullscreenToggle;       // 全屏开关
 
     private void Start()
     {
-        // 从 PlayerPrefs 读取已保存的设置，无则使用系统默认值
-        float savedVolume = PlayerPrefs.GetFloat("Volume", AudioListener.volume);
+        // 从 AudioManager 读取已保存的双通道音量（无实例时回退 PlayerPrefs）
+        volumeSlider.value = AudioManager.Instance?.GetBGMVolume() ?? AudioManager.GetPersistedBGMVolume();
+        sfxVolumeSlider.value = AudioManager.Instance?.GetSFXVolume() ?? AudioManager.GetPersistedSFXVolume();
         bool savedFullscreen = PlayerPrefs.GetInt("Fullscreen", Screen.fullScreen ? 1 : 0) == 1;
 
         // 应用已保存的设置
-        volumeSlider.value = savedVolume;
         fullscreenToggle.isOn = savedFullscreen;
-        AudioListener.volume = savedVolume;
         Screen.fullScreen = savedFullscreen;
 
         // 绑定按钮点击事件
         openSettingsBtn.onClick.AddListener(OpenSettings);
         closeSettingsBtn.onClick.AddListener(CloseSettings);
+        AudioManager.BindClick(openSettingsBtn);
+        AudioManager.BindClick(closeSettingsBtn);
 
         // 绑定滑块和开关值变化事件
         volumeSlider.onValueChanged.AddListener(SetVolume);
+        sfxVolumeSlider.onValueChanged.AddListener(SetSFXVolume);
         fullscreenToggle.onValueChanged.AddListener(SetFullscreen);
 
         // 初始隐藏设置面板
@@ -59,14 +62,23 @@ public class MenuSettingsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 设置音量并持久化到 PlayerPrefs
+    /// 设置 BGM 音量（持久化由 AudioManager 处理）
     /// </summary>
     /// <param name="volume">音量值（0~1）</param>
     public void SetVolume(float volume)
     {
-        AudioListener.volume = volume;
-        PlayerPrefs.SetFloat("Volume", volume);
-        PlayerPrefs.Save();
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.SetBGMVolume(volume);
+    }
+
+    /// <summary>
+    /// 设置 SFX 音效音量（持久化由 AudioManager 处理）
+    /// </summary>
+    /// <param name="volume">音量值（0~1）</param>
+    public void SetSFXVolume(float volume)
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.SetSFXVolume(volume);
     }
 
     /// <summary>

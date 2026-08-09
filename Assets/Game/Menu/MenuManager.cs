@@ -23,11 +23,21 @@ public class MenuManager : MonoBehaviour
 
     private void Start()
     {
+        // 播放主菜单 BGM
+        if (AudioManager.Instance != null && AudioManager.Instance.config != null)
+            AudioManager.Instance.PlayBGM(AudioManager.Instance.config.bgmMenu);
+
         // 绑定主菜单按钮
         newGameButton.onClick.AddListener(OnNewGameClicked);
         continueButton.onClick.AddListener(OnContinueClicked);
         loadGameButton.onClick.AddListener(OnLoadClicked);
         quitButton.onClick.AddListener(QuitGame);
+
+        // 按钮点击音效
+        AudioManager.BindClick(newGameButton);
+        AudioManager.BindClick(continueButton);
+        AudioManager.BindClick(loadGameButton);
+        AudioManager.BindClick(quitButton);
 
         // 绑定栏位选择面板回调
         saveSlotPanel.OnSlotConfirmed += OnSlotConfirmed;

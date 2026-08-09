@@ -49,6 +49,7 @@ public class SaveSlotPanel : MonoBehaviour
             slotLabelTexts[i] = slotButtons[i].GetComponentInChildren<Text>();
             int index = i;
             slotButtons[i].onClick.AddListener(() => OnSlotClicked(index));
+            AudioManager.BindClick(slotButtons[i]);
         }
 
         cancelButton.onClick.AddListener(() =>
@@ -56,9 +57,12 @@ public class SaveSlotPanel : MonoBehaviour
             Hide();
             OnCancelled?.Invoke();
         });
+        AudioManager.BindClick(cancelButton);
 
         overwriteConfirmButton.onClick.AddListener(OnOverwriteConfirm);
         overwriteCancelButton.onClick.AddListener(OnOverwriteCancel);
+        AudioManager.BindClick(overwriteConfirmButton);
+        AudioManager.BindClick(overwriteCancelButton);
 
         Hide();
     }

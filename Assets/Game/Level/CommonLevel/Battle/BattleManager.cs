@@ -57,6 +57,10 @@ public class BattleManager : MonoBehaviour
 
     void Start()
     {
+        // 播放关卡战斗 BGM
+        if (AudioManager.Instance != null && AudioManager.Instance.config != null)
+            AudioManager.Instance.PlayBGM(AudioManager.Instance.config.bgmBattle);
+
         // 启动波次出怪
         waveGenerator.StartWave(enemyTower.transform, waveList);
 
@@ -66,6 +70,8 @@ public class BattleManager : MonoBehaviour
             winPanel.SetActive(false);
             winNextLevelButton.onClick.AddListener(OnWinNextLevel);
             winMainMenuButton.onClick.AddListener(OnWinMainMenu);
+            AudioManager.BindClick(winNextLevelButton);
+            AudioManager.BindClick(winMainMenuButton);
         }
 
         // 初始化失败面板按钮及隐藏
@@ -74,6 +80,8 @@ public class BattleManager : MonoBehaviour
             losePanel.SetActive(false);
             loseRetryButton.onClick.AddListener(OnLoseRetry);
             loseMainMenuButton.onClick.AddListener(OnLoseMainMenu);
+            AudioManager.BindClick(loseRetryButton);
+            AudioManager.BindClick(loseMainMenuButton);
         }
     }
 

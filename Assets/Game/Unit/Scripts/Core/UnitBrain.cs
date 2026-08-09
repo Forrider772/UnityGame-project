@@ -63,6 +63,14 @@ public class UnitBrain : MonoBehaviour
             Debug.LogError($"UnitBrain: {gameObject.name} 缺少 ICombatStrategy 组件！", this);
 
         attr.currentHp = attr.ModifiedMaxHp;
+
+        // 注册到音效管理器，订阅攻击/受击/死亡音（无 AudioManager 时安全跳过）
+        AudioManager.Instance?.RegisterUnit(this);
+    }
+
+    void OnDestroy()
+    {
+        AudioManager.Instance?.UnregisterUnit(this);
     }
 
     void Update()
