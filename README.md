@@ -12,6 +12,8 @@
 
 每个关卡场景中挂载一个 `LevelSetup` 组件（`[DefaultExecutionOrder(-100)]`，最早执行），作为该关卡所有配置的统一入口，在 `Awake` 中自动分发到各子系统。
 
+> **LevelConfig 资产**：`LevelSetup.Awake()` 会先 `Resources.Load<LevelConfig>("Config/LevelConfig_{场景名}")` 读取本关配置资产（由 CSV 策划表工具生成，见第 11 章）。资产存在时**优先用资产填充**卡组 / Buff / 波次 / 塔覆盖并自动打开对应 `overrideXxx`；资产缺失则回退到场景 Inspector 默认配置（不影响 Test / BeiFen 等无配置场景）。
+
 ### Inspector 中的配置分组：
 
 | 分组 | 功能 | 关键参数 |
@@ -25,10 +27,10 @@
 | 资源点 | 覆盖场景中所有 ResourcePoint 的默认值 | `overrideResourcePointConfig`, `resourcePointMaxGarrison`, `resourcePointRange`, `resourcePointBonus` |
 | 驻扎点 | 写入 GarrisonPointManager 的默认值 | `overrideGarrisonConfig`, `garrisonPointMaxGarrison`, `garrisonPointRange` |
 | 关卡 Buff | 游戏开始时自动注册到 BuffManager | 拖入 `BuffData` 资产（对匹配阵营的单位生效）|
-| Boss 牵制范围 | 覆盖己方塔的 `TowerLeashZone` | `overrideLeashConfig`, `enableLeashZone`, `leashRange`, `leashCostRefundRatio` |
-| Boss 单位胜利 | 替代敌方塔摧毁判定 | `useBossVictory`（开启后仅挂 `BossUnit` 的敌方单位死亡判胜，玩家塔被毁仍判负）|
 
 > 每个分组都有独立的 `overrideXxx` 开关。关闭后该子系统使用自身的 Inspector 默认值，不受 LevelSetup 影响。
+
+**Boss 相关配置已从 LevelSetup 拆出**，独立为 `BossLevelSetup` 组件（`Assets/Game/Level/CommonLevel/LevelSetup/BossLevelSetup.cs`）：需要 Boss 机制（`useBossVictory` 判胜 + `TowerLeashZone` 牵制范围）的关卡，在场景中挂一个并配置即可，与 LevelSetup 解耦。**当前 BossLevelSetup 尚未挂载到任何场景**（Boss 关整体未激活，详见第 6 章 TowerLeashZone 状态说明）。
 
 ---
 
@@ -136,10 +138,10 @@ var result = path.GetClosestPoint(worldPosition);
 **Combat/**（战斗策略）
 - `Combat/ICombatStrategy.cs` — 战斗策略接口
 - `Combat/BaseCombatStrategy.cs` — 战斗抽象基类：攻击节奏（Windup→Recovery→IdleWait）、索敌缓存、统一伤害结算
-- `Combat/MeleeCombatStrategy.cs` — 近战（按距离索敌 + 跳过飞行单位）
-- `Combat/RangedCombatStrategy.cs` — 远程投射物（生成 Bullet）
-- `Combat/HealerCombatStrategy.cs` — 治疗（奶血量百分比最低友方）
-- `Combat/Bullet.cs` — 通用投射物
+- `Combat/MeleeCombatStrategy.cs` — 近战（按距离索敌；**地面近战跳过飞行单位，飞行近战可攻击任意目标含飞行**）
+- `Combat/RangedCombatStrategy.cs` — 远程投射物（生成 Bullet，发射时触发 `OnRangedFire`）
+- `Combat/HealerCombatStrategy.cs` — 治疗（奶血量百分比最低友方，生效时触发 `OnHeal`）
+- `Combat/Bullet.cs` — 通用投射物（命中触发 `GameEvents.OnBulletHit`）
 
 **Movement/**（移动策略）
 - `Movement/IMoveStrategy.cs` — 移动策略接口（含 `IsTeleporting`）
@@ -149,7 +151,7 @@ var result = path.GetClosestPoint(worldPosition);
 
 **Core/**（单位核心）
 - `Core/UnitAttr.cs` — 属性数据 + Buff 修饰层 + `AttackType`/`AttackRangeType` 枚举
-- `Core/UnitBrain.cs` — 状态机调度器（含事件系统）
+- `Core/UnitBrain.cs` — 状态机调度器（事件系统：状态 / 死亡 / 受击 / 攻击命中 / 远程开火 / 治疗等；并自动注册到 `AudioManager`）
 - `Core/UnitState.cs` — 状态枚举
 - `Core/UnitHelper.cs` — 生成时注入 camp/layer
 - `Core/UnitVisual.cs` — 受击闪红视觉
@@ -225,7 +227,7 @@ AttackingTower ──┬── 目标超出范围/丢失 ─► Advancing
 | `detectRange` | 搜寻敌人半径 |
 | `physicalDefense` / `magicDefense` | 对应攻击类型的减伤值 |
 | `moveType` | `Ground`（沿路径走）或 `Flying`（沿 Flight 路径飞行）|
-| `attackRangeType` | `Melee`（近战，不能攻击飞行单位）或 `Ranged`（远程）|
+| `attackRangeType` | `Melee`（近战；**地面近战不能攻击飞行单位，飞行近战可攻击任意**）或 `Ranged`（远程）|
 | `attackType` | `Physical` 或 `Magic`（决定受哪种防御减免）|
 
 3. 远程兵种需在 `RangedCombatStrategy` 中配置 `bulletPrefab`、`bulletSpeed`
@@ -272,6 +274,8 @@ waveGenerator.StopWave();   // 中断所有未开始的波次
 waveGenerator.Continue();   // 继续下一个 Manual 波次
 ```
 
+> 波次事件：每波开始触发 `GameEvents.OnWaveStart`，生成第一个敌人时触发 `GameEvents.OnEnemySpawned`（供音效等订阅方监听）。
+
 ---
 
 ## 6. 战斗系统
@@ -290,7 +294,7 @@ waveGenerator.Continue();   // 继续下一个 Manual 波次
 | `waveGenerator` / `waveList` | 波次生成器与配置 |
 | `playerTower` / `enemyTower` | 双塔对象引用 |
 | `maxCost` / `costAddSpeed` / `nowCost` | 费用体系 |
-| `useBossVictory` | Boss 胜利模式开关（由 LevelSetup 写入）|
+| `useBossVictory` | Boss 胜利模式开关（由 `BossLevelSetup` 组件写入）|
 
 `BattleManager` 统一管理扣费（`UseCost()`）、加费（`AddCost()`，不超过上限，牵制返还用）、胜负判定、胜利/失败面板显示。
 
@@ -299,18 +303,22 @@ waveGenerator.Continue();   // 继续下一个 Manual 波次
 - **Boss 胜利模式**（`useBossVictory=true`）：敌方塔被摧毁**不判胜**，仅挂有 `BossUnit` 的敌方单位死亡触发 `OnBossDefeated()` 判胜；玩家塔被摧毁仍判负。
 - 胜利时若该关在 `LevelToStoryMap` 中有对应剧情场景，先播剧情再进下一关（当前映射：`Level_1 → StoryScene_Ch2`）。
 
+> 战斗事件：胜负 / Boss 击破触发 `GameEvents.OnGameWin / OnGameLose / OnBossDefeated`；塔攻击 / 受击 / 摧毁触发 `GameEvents.OnTowerAttack / OnTowerDamaged / OnTowerDestroyed`。
+
 ### TowerBase
 
 防御塔组件挂载在塔 GameObject 上：`camp` / `hp` / `atk` / `atkRange` / `atkCD` / 双防御 / `hpBarPrefab`。每帧搜索范围内敌方单位并攻击，死亡时通知 `BattleManager` 判定胜负。
 
 ### Boss 关牵制范围（TowerLeashZone）
 
-挂载在己方塔上（单例）。`CardDeploy` 部署单位后调用 `RegisterUnit(brain)` 注册；每 `checkInterval` 检测单位与塔的距离，超出 `leashRange` 时：
+挂载在己方塔上（单例），参数由场景中的 `BossLevelSetup` 组件写入。`CardDeploy` 部署单位后调用 `RegisterUnit(brain)` 注册；每 `checkInterval` 检测单位与塔的距离，超出 `leashRange` 时：
 1. 返还 `deployCost × costRefundRatio` 费用（`BattleManager.AddCost()`）
 2. 调用 `UnitBrain.Die()` 走正常死亡流程
 3. 传送中的单位跳过检测
 
 范围圈可视化：`LeashCircleDisplay`（`Helper/`，空心圆，世界坐标精确）。
+
+> **当前状态**：`TowerLeashZone` 组件已无任何场景 / prefab 实例，需挂到己方塔上并配 `BossLevelSetup` 才会生效。
 
 ### 伤害结算（DamageCalculator）
 
@@ -409,7 +417,7 @@ SaveManager.MarkLevelCompleted("Level_1", slotIndex);
 **文件:**
 - `Assets/Game/Menu/MenuManager.cs` — 主菜单逻辑（新游戏先播第一章剧情）
 - `Assets/Game/Menu/SaveSlotPanel.cs` — 存档栏位选择面板（NewGame/Load 两种模式 + 覆盖确认弹窗）
-- `Assets/Game/Menu/MenuSettingsManager.cs` — 菜单设置（音量/全屏，PlayerPrefs 持久化）
+- `Assets/Game/Menu/MenuSettingsManager.cs` — 菜单设置（BGM / SFX 双通道音量 + 全屏，音量持久化由 `AudioManager` 统一处理）
 - `Assets/Game/Menu/MenuScene.unity` — 主菜单场景
 
 ### 菜单流程
@@ -429,6 +437,69 @@ MenuScene (主菜单)
 
 ---
 
+## 11. CSV 策划配置表
+
+将策划数值从 Unity 预制体 / 资产中抽离到 CSV，策划用 Excel 改表 → 回 Unity 点菜单 → 数值自动写入游戏。
+
+**目录结构**（`Assets/Game/CSV/`）：
+
+| 目录 | 内容 |
+|------|------|
+| `Core/` | 运行时通用解析层：`CsvReader.cs`（轻量 CSV 解析，UTF-8 BOM / 严格 UTF-8 / GBK 回退编码兼容，支持 `#` 注释行）、`CsvTable.cs`（表头映射 + 类型化取值 + `CsvWriterHelper` 写出 UTF-8 BOM）|
+| `Editor/` | 编辑器工具：`ConfigTableConst`（路径 / 列映射 / 导入前备份）、`ConfigTableExporter`、`ConfigTableMenu`、各表导入器（Unit / Card / Deck / Buff / Tower / Wave）|
+| `Tables/` | 数据表 CSV：`UnitTable.csv`、`CardTable.csv`、`DeckTable.csv`、`BuffTable.csv`、`TowerTable.csv`、`WaveTable_Level_1~6.csv` + `README.txt` + `_backup/`（导入前自动备份）|
+
+**菜单**（`Tools/策划表/`）：导入 单位表 / 卡牌表 / 初始牌组表 / Buff 表 / 塔属性表 / 波次表、**一键导入全部**、导出 CSV 初版、打开 CSV 文件夹。
+
+**六张表：**
+
+| 表 | 主键 | 内容 |
+|----|------|------|
+| UnitTable.csv | `unitID` = 预制体文件名 | 单位 `UnitAttr` 全量数值（`GeneralUnit/` 下 8 个单位）|
+| CardTable.csv | `cardID` | 卡牌费用 / 冷却 / 阵营 / 名称（`CardAssets/` 下 8 张卡）|
+| DeckTable.csv | `levelIndex` + `cardID` | 每关初始牌组（引用 `Card_{cardID}.asset`）|
+| BuffTable.csv | `levelIndex` + `buffID` | 每关应用的 Buff（引用 `Buff_{buffID}.asset`）|
+| TowerTable.csv | `levelIndex` + `towerCamp` | 双塔属性覆盖（6 关 × 2 阵营）|
+| WaveTable_Level_N.csv | `waveIndex` | 每关波次（`spawnPoint` 不进表，需在 Unity 的 WaveList 资产里拖）|
+
+**工作流（三步）：**
+1. 用 Excel 打开 CSV 修改数值（**另存为「CSV UTF-8」格式**，避免中文乱码）
+2. 保存并关闭文件（Excel 会锁定文件）
+3. Unity 菜单 `Tools → 策划表 → 一键导入全部`，弹窗提示成功 / 失败条数
+
+**导入后发生了什么：**
+- 单位表 / 卡牌表：直接改写 `GeneralUnit/*.prefab` 的 `UnitAttr` 与 `CardAssets/*.asset`（`SerializedObject` 落盘 + `Undo` 支持 Ctrl+Z）
+- 牌组 / Buff / 塔 / 波次四张表：生成 / 更新每关的 **`LevelConfig` 资产**（`Assets/Resources/Config/LevelConfig_Level_N.asset`），`LevelSetup` 运行时 `Resources.Load` 自动读取（见第 1 章）
+- 导入前自动备份被改动文件到 `_backup/{时间戳}/`，误操作可恢复
+- 波次表导入会顺带把旧字段 `nextWaveInterval` 迁移为新字段 `delayBeforeStart`
+
+> **注意**：DeckTable / BuffTable 当前只有注释示例无数据行；`LevelConfig_Level_N.asset` 需在 Unity 中执行过导入后才会生成（仓库中尚未生成）。表头（第一行）勿改，列顺序可任意调整；`unitID / cardID / buffID` 为主键勿乱改；图标 / 血条等美术引用不进表。
+
+---
+
+## 12. 音效系统（AudioManager）
+
+**文件**（`Assets/Game/Audio/`）：
+- `AudioManager.cs` — 音效管理器（单例，`DontDestroyOnLoad` 跨场景保活）
+- `AudioConfig.cs` — `AudioSlot` 枚举（18 个 SFX 槽）+ `AudioConfig` 资产（2 个 BGM + 18 个 SFX）
+- `AudioManager.prefab` / `AudioConfig.asset` — 预制体与配置资产
+
+**核心机制：**
+- **双通道**：BGM 循环源 + SFX 一次性源，音量独立调节，`PlayerPrefs` 持久化（`AudioBGMVolume` / `AudioSFXVolume`；旧单一 `Volume` 键首次启动自动迁移）
+- **事件驱动**：集中订阅 `GameEvents` 系统事件（第 5 章波次事件、第 6 章战斗事件等）+ `UnitBrain` 单位事件（`OnAttackHit / OnRangedFire / OnHeal / OnDamageTaken / OnDeath`），驱动全游戏音效；单位 `Awake / OnDestroy` 时由 `UnitBrain` 自动注册 / 解绑
+- **Boss 死亡音去重**：Boss 死亡音由 `GameEvents.OnBossDefeated` 统一播放，跳过单位死亡音避免双响
+- **UI 点击音**：`AudioManager.BindClick(button)` 一键绑定（主菜单 / 档位 / 设置 / 暂停 / 胜负面板按钮均已绑定）
+
+**挂载与使用：**
+- `AudioManager.prefab` 放入 `MenuScene` 与 `CommonLevel.prefab` 各一个实例，`Awake` 单例去重 + `DontDestroyOnLoad` 保活 BGM；后加载场景的实例自动销毁
+- BGM：`MenuManager.Start` 播 `bgmMenu`，`BattleManager.Start` 播 `bgmBattle`
+- 音量：设置面板（`MenuSettingsManager` / `GameSettingsManager`）改为 BGM + SFX 双滑块，调 `AudioManager.SetBGMVolume / SetSFXVolume`
+- 新增音效：把音频拖入 `AudioConfig.asset` 对应槽位（`Create → Audio/AudioConfig`），再拖到 `AudioManager.config` 字段
+
+> **当前配置**：`bgmMenu`、`sfxUIClick`（Fungus Click）、`sfxCardSelect`（Fungus Click2）、`sfxAttackMelee`、`sfxHurt` 已配占位音频（`Assets/MusicResources/` 下 3 个 mp3 + Fungus 自带 wav）；`bgmBattle` 及其余 SFX 槽为空，对应事件静默 no-op。
+
+---
+
 ## 全局单例一览
 
 | 单例 | 文件 | 职责 |
@@ -439,6 +510,7 @@ MenuScene (主菜单)
 | `LevelPathManager` | `Path/LevelPathManager.cs` | 场景内路径注册与查询 |
 | `ResourcePointManager` | `ResourcePoint/ResourcePointManager.cs` | 资源点注册与增益计算 |
 | `GarrisonPointManager` | `GarrisonPoint/GarrisonPointManager.cs` | 驻扎点创建与查询 |
-| `TowerLeashZone` | `Battle/TowerLeashZone.cs` | Boss 关牵制范围检测 |
+| `TowerLeashZone` | `Battle/TowerLeashZone.cs` | Boss 关牵制范围检测（需挂到塔上，当前无场景实例）|
+| `AudioManager` | `Audio/AudioManager.cs` | 音效管理器（BGM/SFX 双通道，跨场景保活）|
 
-> 静态类（无 Instance）：`SaveManager`、`DamageCalculator`、`UnitHelper`、`MoveTypeHelper`、`Math2DHelper`、`PathMath`、`CatmullRomMath`。废弃的 `DialogueManager` 在 `Deprecated/Dialogue/`，请勿使用。
+> 静态类（无 Instance）：`SaveManager`、`DamageCalculator`、`UnitHelper`、`MoveTypeHelper`、`Math2DHelper`、`PathMath`、`CatmullRomMath`、**`GameEvents`**（全局事件总线）、`CsvReader` / `CsvTable`（CSV 解析）。废弃的 `DialogueManager` 在 `Deprecated/Dialogue/`，请勿使用。

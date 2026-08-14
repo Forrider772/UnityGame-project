@@ -12,16 +12,6 @@
 
 ## 🟡 中优先级 — 体验完善
 
-### 5. 音效系统完全缺失
-
-**现状：** 项目中有音量设置（`MenuSettingsManager`、`GameSettingsManager`），但没有音效管理器，也没有任何 AudioSource/AudioClip 的使用。
-
-**需要：**
-- [ ] 创建 `AudioManager` 单例，统一管理 BGM 和 SFX
-- [ ] 添加关键音效：卡牌点击、单位部署、攻击命中、单位死亡、胜利/失败
-- [ ] 添加背景音乐（菜单、战斗）
-- [ ] 从 `PlayerPrefs` 读取音量设置并应用到 AudioMixer
-
 ### 6. 视觉反馈缺失（部分已实现）
 
 **现状：** 受击闪红已实现（`UnitVisual.cs`，`Assets/Game/Unit/Scripts/Core/UnitVisual.cs`）；但单位死亡直接 `Destroy(gameObject)`，攻击无视觉特效反馈，治疗特效仅为可选预制体。
@@ -119,19 +109,10 @@
 
 ### 20. 事件系统解耦
 
-**现状：** 大量直接单例引用（`BattleManager.Instance.xxx`、`CardManager.Instance.xxx`），模块耦合紧密。单位侧已引入事件系统（`UnitBrain.OnStateChanged/OnDeath/OnDamageTaken` 等），但系统级事件仍缺失。
+**现状：** 系统级事件总线 `GameEvents`（`Assets/Game/Level/CommonLevel/Helper/GameEvents.cs`）已建立：卡牌 / 波次 / 塔 / 胜负 / 子弹命中 12 个事件，`AudioManager` 已据此驱动音效。但模块间直接单例引用（`BattleManager.Instance.xxx`、`CardManager.Instance.xxx`）仍较多。
 
 **建议：**
-- [ ] 引入 `UnityEvent` 或自定义事件总线
-- [ ] 关键事件：费用变化、波次结束、游戏结束、塔血量变化
-
-### 21. 配置表驱动
-
-**现状：** 单位属性硬编码在 prefab 的 `UnitAttr` 中，卡牌数据依赖 ScriptableObject 手动创建。
-
-**建议：**
-- [ ] 考虑用 CSV/JSON 配置表管理单位数值
-- [ ] 编辑器工具一键从配置表生成/更新 prefab 和 ScriptableObject
+- [ ] 继续用 `GameEvents` 扩展更多事件：费用变化、波次结束、塔血量变化等，逐步替换直接单例调用
 
 ### 22. 对象池
 
@@ -195,18 +176,23 @@
 - [x] 投射物预制体 — Bullet + Fireball；治疗特效 — HealEffect
 - [x] 设置持久化 — 音量/全屏通过 PlayerPrefs 保存
 - [x] 路径节点间传送 — ConnectionType.Walk/Teleport + BaseMoveStrategy 传送状态机（Level_5/6 配置）
-- [x] Boss 关胜利判定 — BossUnit 死亡判胜（useBossVictory，Level_6 已开启，**Boss 出场未接线**）
-- [x] 牵制范围机制 — TowerLeashZone 超半径死亡并返还费用（Level_6 已挂载）
+- [x] Boss 关胜利判定脚本 — BossUnit 死亡判胜 + `BossLevelSetup` 独立配置（**关卡接线待补**，见下方已知问题）
+- [x] 牵制范围机制 — TowerLeashZone 超半径死亡并返还费用（脚本就绪，**场景未挂载**）
 - [x] Buff 系统 — BuffManager + UnitAttr 修饰层（攻击/生命/移速/攻速/防御倍率）
 - [x] 剧情系统（Fungus）— StoryScene_Ch1/Ch2 + 剧本导入工具 ScriptToFungusTool
 - [x] 受击闪红视觉 — UnitVisual.cs
 - [x] 项目文件结构整理 — 代码迁移到 `Assets/Game/`，单位脚本按职责分 Combat/Movement/Core/UI
+- [x] CSV 策划配置表 — 单位/卡牌/波次/Buff/塔六张表 + 导入导出工具 + LevelConfig 资产（`Tools/策划表/` 菜单）
+- [x] 全局事件总线 — GameEvents 系统级事件（卡牌/波次/塔/胜负/子弹命中 12 个）
+- [x] 音效系统 — AudioManager 双通道（BGM/SFX）独立音量 + 全事件音效 + UI 点击音
+- [x] 飞行单位互攻修复 — 地面近战跳过飞行、飞行近战可攻击任意目标（MeleeCombatStrategy）
 
 ---
 
 ## 🚧 开发中 / 已知问题（文档同步时发现）
 
-- [ ] **Boss 关未真正可玩**：`Level_6` 已开启 `useBossVictory` 与牵制范围，但 `SpecialUnit/Boss.prefab` **未被任何波次/场景引用**，Boss 实际出场未接线 → 敌方塔不判胜、场上又无 Boss 可杀，关卡目前无法通关。
+- [ ] **Boss 关未真正可玩**：`useBossVictory` 与牵制配置已拆为独立 `BossLevelSetup` 组件，但**未挂载到任何场景**（Level_6 场景中的旧 `useBossVictory` 序列化残留已不生效）；`TowerLeashZone` 无场景实例；`SpecialUnit/Boss.prefab`（含 `BossUnit`）**未被任何波次/场景引用** → 敌方塔不判胜、场上又无 Boss 可杀，关卡目前无法通关。接线步骤：场景挂 `BossLevelSetup` → `TowerLeashZone` 挂到己方塔 → Boss 预制体加入波次配置。
 - [ ] **关卡推进链仅到第二关**：`SaveManager.levelSceneOrder` 硬编码 `{ "Level_1", "Level_2" }`，Level_3~6 未加入推进链。
-- [ ] **Build Settings 不完整**：`Level_3~6`、`Test`、`GameStart` 未加入；`EditorBuildSettings.asset` 内路径仍为旧路径（GUID 与新位置一致，Unity 打开会自动修正，属低风险）。
+- [ ] **Build Settings 不完整**：`Level_3~6`、`Test`、`GameStart` 仍未加入 Build Settings（`EditorBuildSettings.asset` 中现有场景路径已更新为 `Assets/Game/...` 新位置）。
 - [ ] **对话内容占位**：剧情立绘 `Portrait_A.png` 等为占位图，正式美术待替换。
+- [ ] **音效资源占位**：仅 `bgmMenu / sfxUIClick / sfxCardSelect / sfxAttackMelee / sfxHurt` 配了占位音频，`bgmBattle` 及多数 SFX 槽为空（对应事件静默 no-op）。
